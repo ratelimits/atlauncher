@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+env:
+  # While true, releases are published as pre-releases titled "Beta".
+  BETA: "true"
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -40,6 +44,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" --title "ATLauncher ${GITHUB_REF_NAME#v}" --notes-file notes.md --latest \
+          if [ "$BETA" = true ]; then flags="--prerelease"; title="ATLauncher ${GITHUB_REF_NAME#v} Beta"
+          else flags="--latest"; title="ATLauncher ${GITHUB_REF_NAME#v}"; fi
+          gh release create "$GITHUB_REF_NAME" --title "$title" --notes-file notes.md $flags \
             dist/*.ipk dist/repo.json dist/sha256sums dist/description.html dist/app-icon-large.png \
             dist/atlauncher-aerial-picks.tar.gz

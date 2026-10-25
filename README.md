@@ -2,6 +2,10 @@
 
 A native Home Screen for rooted LG webOS TVs, inspired by Apple TV.
 
+> [!IMPORTANT]
+> **Beta.** ATLauncher is tested on one TV so far (see [Compatibility](#compatibility)). Expect rough edges, and keep
+> `atlauncher.sh disable` handy.
+
 ATLauncher is a QML app run by the TV's own Qt (no runtime to install), drawn on the GPU at a steady ~58 fps on a
 budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home screen.
 
@@ -33,16 +37,16 @@ and LG's `qml-runner` (present on webOS 25; other versions are untested). Report
 
 ### Homebrew Channel
 
-Add this repository in Homebrew Channel's settings:
+Add this repository in Homebrew Channel's settings (during the beta, the current beta's address):
 
 ```text
-https://github.com/ratelimits/atlauncher/releases/latest/download/repo.json
+https://github.com/ratelimits/atlauncher/releases/download/v1.0.0/repo.json
 ```
 
 ### SSH
 
 Download `com.ratelimits.atlauncher_<version>_all.ipk` from the
-[latest release](https://github.com/ratelimits/atlauncher/releases/latest). On your computer, replace `TV_IP`:
+[releases](https://github.com/ratelimits/atlauncher/releases). On your computer, replace `TV_IP`:
 
 ```sh
 scp -O com.ratelimits.atlauncher_1.0.0_all.ipk root@TV_IP:/tmp/atlauncher.ipk
@@ -213,7 +217,8 @@ Set the version in `app/appinfo.json`, add it to `CHANGELOG.md`, then push a mat
 git tag v1.0.1 && git push origin v1.0.1
 ```
 
-The **Release** workflow builds the IPK and publishes a GitHub release with it, `repo.json` (for Homebrew Channel),
+The **Release** workflow builds the IPK and publishes a GitHub release (a pre-release titled "Beta" while `BETA` is
+`true` in the workflow) with it, `repo.json` (for Homebrew Channel),
 `sha256sums`, `description.html`, the icon and the Aerial picks.
 
 ## Privacy
