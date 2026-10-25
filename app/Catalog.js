@@ -60,11 +60,12 @@ function withArt(base, info, opts) {
     info = info || {};
     opts = opts || {};
     if (!app.name) app.name = info.title || app.id;
-    // Tile: your custom art, else (App Store Icons on) the app's Apple TV tile, else its icon (App Store, else LG).
+    // Tile: your custom art, else (App Store Icons on, and not turned off for this app) its Apple TV tile, else its
+    // own LG icon. `storeTile` says whether an Apple TV tile exists (Settings > Apps shows it).
+    app.storeTile = !!info.storeTile;
     if (info.customIcon) app.tile = dataUrl(info.customIcon);
-    else if (opts.storeIcons && info.storeTile) app.tile = dataUrl(info.storeTile);
-    if (!app.tile && opts.storeIcons && info.storeIcon) { app.icon = dataUrl(info.storeIcon); app.roundIcon = true; }
-    else if (!app.tile && info.tileIcon) app.icon = dataUrl(info.tileIcon);
+    else if (opts.storeIcons && info.storeTile && (opts.storeOff || []).indexOf(app.id) < 0) app.tile = dataUrl(info.storeTile);
+    if (!app.tile && info.tileIcon) app.icon = dataUrl(info.tileIcon);
     app.color = info.iconColor || app.color || '#3a3c46';
     if (info.customArt) app.shelf = dataUrl(info.customArt);
     else if (!app.shelf && info.tileBg) app.shelf = dataUrl(info.tileBg);

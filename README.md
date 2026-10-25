@@ -10,8 +10,8 @@ budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home 
 - **Top Shelf**: each app's own splash; rest on Netflix, Prime Video, Disney+, Hulu or Apple TV for 5 seconds
   and its popular shows appear from [TMDB](https://www.themoviedb.org) (full-screen carousel or a "Top Shows" row).
 - **App menu**: hold OK on an app for Quit App (while it runs), Edit Home Screen and Delete App.
-- **Settings**: show or hide apps, rearrange, Top Shelf and Dock options, LG's quick settings, and a way back to LG
-  Home.
+- **Settings**: per app, show or hide it, choose its App Store icon, quit or delete it; rearrange; Top Shelf and Dock
+  options; LG's quick settings; and a way back to LG Home.
 - **Remote**: Home returns to the app you were on (press again for the first app); the Settings and Input keys open
   ATLauncher's Settings and inputs row; Back works throughout.
 
@@ -110,8 +110,9 @@ This product uses the TMDB API but is not endorsed or certified by TMDB.
 ## App Store icons
 
 With **Settings → Appearance → App Store Icons** on (the default), the TV looks each app up on Apple's App Store and
-uses its Apple TV icon as the tile, or its iPhone icon when it has no Apple TV app. They're downloaded once by the
-TV into `/var/lib/atlauncher/storeicons/` (none are bundled); apps without a match keep their LG icon. Popular apps
+uses its Apple TV icon as the tile. They're downloaded once by the TV into `/var/lib/atlauncher/storeicons/` (none
+are bundled); apps without an Apple TV version keep their own LG icon, scaled by **Icon Size** (Medium by default).
+Each app's own page in **Settings → Apps** can turn its App Store icon off. Popular apps
 use exact App Store ids; others are matched by name, accepting only a close match.
 
 To fix a wrong match, or keep an app's LG icon, add it to `/var/lib/atlauncher/store-ids.json` (the App Store id is
@@ -163,7 +164,9 @@ scp -O SF-Pro-Display-Regular.otf SF-Pro-Display-Medium.otf SF-Pro-Display-Semib
   SF-Pro-Display-Bold.otf root@TV_IP:/var/lib/atlauncher/fonts/
 ```
 
-ATLauncher uses SF Pro whenever the regular weight is there (`.otf` or `.ttf`), and Inter otherwise. Delete the folder
+ATLauncher uses SF Pro whenever the regular weight is there (`.otf` or `.ttf`), and Inter otherwise. With SF Pro, ATLauncher's icons
+(Settings, the app menu, the chevron) are its SF Symbols too, drawn from the font you installed; with Inter they are
+Lucide icons. Delete the folder
 to go back. For the desktop preview, put the files in `app/userfonts/` (ignored by git and never packaged).
 
 ## Moving your arrangement

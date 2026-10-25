@@ -85,12 +85,12 @@ Item {
                     x: 26
                     height: parent.height
                     spacing: 18
-                    Image {
+                    Glyph {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 40; height: 40
-                        sourceSize: Qt.size(96, 96)
-                        smooth: true
-                        source: 'glyphs/menu-' + rowItem.info.glyph + (rowItem.focused ? '-focus' : '') + '.png'
+                        name: 'menu-' + rowItem.info.glyph
+                        focusVariant: rowItem.focused
+                        color: rowItem.info.red ? '#ff453a' : rowItem.focused ? '#1c1c1e' : 'white'
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter

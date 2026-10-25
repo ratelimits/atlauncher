@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """App Store icons for ATLauncher (Settings > Appearance > App Store Icons). For each app on the TV, find its App Store
-app and download its Apple TV tile (the flat render of its tvOS icon, 500x300), or its iPhone icon when it has no
-Apple TV version, into /var/lib/atlauncher/storeicons. Nothing is bundled: this runs on the TV (started by
+app and download its Apple TV tile (the flat render of its tvOS icon, 500x300) into /var/lib/atlauncher/storeicons.
+Apps without an Apple TV version keep their own LG icon (no iPhone icon is used). Nothing is bundled: this runs on the TV (started by
 apps-watch.sh) and only talks to itunes.apple.com, apps.apple.com and Apple's image server.
 
 Which App Store app: /var/lib/atlauncher/store-ids.json first ({"<webOS app id>": <App Store id>, or null to leave
@@ -16,7 +16,7 @@ UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/60
                     'Version/17.0 Safari/605.1.15'}
 HIT_DAYS, MISS_DAYS = 30, 7
 # Bump when the way icons are found changes: an index from an older version is discarded and every app refetched.
-INDEX_VERSION = 3
+INDEX_VERSION = 4
 
 # webOS app id -> App Store id, for apps whose LG names don't search well or have look-alikes.
 BUILTIN = {
@@ -66,15 +66,9 @@ def own_tv_icon(page, store_id):
 
 
 def fetch(store_id, app_id):
-    """Download the Apple TV tile, else the iPhone icon. Returns {'tile': path} or {'icon': path} or {}."""
+    """Download the Apple TV tile. Returns {'tile': path}, or {} when the app has no Apple TV version."""
     tv = own_tv_icon(get(f'https://apps.apple.com/us/app/id{store_id}?platform=tv'), store_id)
-    if tv:
-        return {'tile': save(tv + '/500x300bb.png', app_id, 'tile')}
-    look = json.loads(get(f'https://itunes.apple.com/lookup?id={store_id}&country=us')).get('results', [])
-    art = look[0].get('artworkUrl512') if look else None
-    if art:
-        return {'icon': save(re.sub(r'/\d+x\d+bb\.\w+$', '/512x512bb.png', art), app_id, 'icon')}
-    return {}
+    return {'tile': save(tv + '/500x300bb.png', app_id, 'tile')} if tv else {}
 
 
 def save(url, app_id, kind):

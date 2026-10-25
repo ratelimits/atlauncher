@@ -48,12 +48,11 @@ Item {
                 GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.36) }
                 GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0.18) }
             }
-            Image {
+            Glyph {
                 anchors.centerIn: parent
                 width: 300; height: 300
-                sourceSize: Qt.size(300, 300)
-                source: view.row.glyph ? 'glyphs/' + view.row.glyph + '.png' : ''
-                smooth: true
+                name: view.row.glyph || ''
+                color: '#2c2c30'
             }
         }
         // An app row: the app's own tile at its 5:3 shape.

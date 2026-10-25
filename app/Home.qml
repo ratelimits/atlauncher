@@ -68,8 +68,12 @@ Item {
     property bool liquidGlass: true
     // Settings > Appearance > Icon Size: how big an app's own icon is drawn on its tile (in tile heights).
     readonly property var iconSizes: [{ name: 'Fill', scale: 1.67 }, { name: 'Large', scale: 1.3 }, { name: 'Medium', scale: 1.0 }, { name: 'Small', scale: 0.75 }]
-    property int iconSizeIndex: 0
+    property int iconSizeIndex: 2   // Medium
     readonly property real iconScale: iconSizes[iconSizeIndex].scale
+    function sizeIndex(name) {
+        for (var i = 0; i < iconSizes.length; i++) if (iconSizes[i].name === name) return i;
+        return 2;   // Medium
+    }
     property var shownScene: null
     property bool pointerLive: false
     property bool pointerEnabled: true   // Magic Remote hover (off in scripted previews)
@@ -351,7 +355,7 @@ Item {
         var focusId = apps[selected] && apps[selected].id, shelfId = apps[shelfApp] && apps[shelfApp].id;
         var st = storeState();
         var hadSeen = !!st.seen;
-        var r = Cat.arrange(installed, st, [appId, Cat.OWN_ID], { storeIcons: prefs.storeIcons !== false });
+        var r = Cat.arrange(installed, st, [appId, Cat.OWN_ID], { storeIcons: prefs.storeIcons !== false, storeOff: prefs.storeOff || [] });
         if (installed && (st.seen || hadSeen)) Store.set('seen', st.seen);
         apps = r.apps;
         candidates = r.candidates;
@@ -457,14 +461,13 @@ Item {
                     startEditing();
                 } }];
             candidates.forEach(function (app) {
-                var hidden = isHidden(app.id);
-                rows.push({ label: app.name, value: hidden ? 'Hidden' : 'Shown', image: app.tile || app.icon || '',
-                    generic: !app.tile, color: app.color,
-                    note: hidden ? 'Not on the Home Screen. Press OK to show it.' : 'On the Home Screen. Press OK to hide it.',
-                    act: function () { setHidden(app.id, !hidden); updateApps(); refreshSettings(); } });
+                rows.push({ label: app.name, value: isHidden(app.id) ? 'Hidden' : 'Shown', page: 'app:' + app.id,
+                    image: app.tile || app.icon || '', generic: !app.tile, color: app.color,
+                    note: 'Show or hide it, choose its icon, or quit or delete it.' });
             });
             return { title: 'Apps', rows: rows };
         }
+        if (id.indexOf('app:') === 0) return appPage(id.slice(4));
         if (id === 'shelf') return { title: 'Top Shelf', rows: [
             { label: 'Movies and Shows', value: tmdbKey ? onOff(!prefs.tmdbOff) : 'No API key', glyph: 'shelf',
               note: tmdbKey ? 'Each app shows its own splash first; after 5 seconds on Netflix, Prime Video, Disney+, Hulu or Apple TV, its popular shows from TMDB. Off keeps the splashes. ' + tmdbNotice
@@ -480,7 +483,7 @@ Item {
               act: function () { setPref('storeIcons', prefs.storeIcons === false); updateApps(); refreshSettings(); } },
             { label: 'Icon Size', value: iconSizes[iconSizeIndex].name, glyph: 'apps',
               note: 'How big each app\u2019s own icon is on its tile: Fill covers the tile, Small shows the whole icon on its own colour. Press OK to change.',
-              act: function () { iconSizeIndex = (iconSizeIndex + 1) % iconSizes.length; setPref('iconSize', iconSizeIndex); refreshSettings(); } }
+              act: function () { iconSizeIndex = (iconSizeIndex + 1) % iconSizes.length; setPref('iconSizeName', iconSizes[iconSizeIndex].name); refreshSettings(); } }
         ] };
         return { title: 'System', rows: [
             asHome ? { label: 'Restart into LG Home', glyph: 'restart', note: 'Restarts the TV into LG’s own Home screen. The restart after that brings ATLauncher back.', act: restartIntoLgHome }
@@ -489,6 +492,64 @@ Item {
               note: 'A Home Screen for this TV, inspired by Apple TV. Not affiliated with LG, Apple or the apps shown. ' + tmdbNotice +
                     ' github.com/ratelimits/atlauncher' }
         ] };
+    }
+
+    // Settings > Apps > <app>: Home Screen (shown / hidden), App Store Icon, Quit App (while it runs), Delete App.
+    property var runningIds: []
+    property string deleteArmed: ''
+    property double deleteArmedUntil: 0
+    function refreshRunning() {
+        call('luna://com.webos.applicationManager/running', {}, function (r) {
+            runningIds = ((r && r.running) || []).map(function (a) { return a.id; });
+            if (settings.open) refreshSettings();
+        });
+    }
+    function appPage(id) {
+        var app = candidates.filter(function (a) { return a.id === id; })[0];
+        if (!app) return { title: 'Apps', rows: [] };
+        var pic = { image: app.tile || app.icon || '', generic: !app.tile, color: app.color };
+        function row(r) { for (var k in pic) r[k] = pic[k]; return r; }
+        var hidden = isHidden(app.id), storeOff = (prefs.storeOff || []).indexOf(app.id) >= 0;
+        var rows = [
+            row({ label: 'Home Screen', value: hidden ? 'Hidden' : 'Shown',
+                  note: hidden ? 'Not on the Home Screen. Press OK to show it.' : 'On the Home Screen. Press OK to hide it.',
+                  act: function () { setHidden(app.id, !hidden); updateApps(); refreshSettings(); } }),
+            row({ label: 'App Store Icon', value: !app.storeTile ? 'Not available' : storeOff ? 'Off' : 'On',
+                  note: !app.storeTile ? 'This app has no Apple TV version on the App Store, so it keeps its own icon.'
+                      : storeOff ? 'Using the app\u2019s own icon. Press OK to use its Apple TV icon from the App Store.'
+                                 : 'Using its Apple TV icon from the App Store. Press OK to use the app\u2019s own icon.',
+                  act: function () {
+                      if (!app.storeTile) return;
+                      var list = (prefs.storeOff || []).filter(function (x) { return x !== app.id; });
+                      if (!storeOff) list.push(app.id);
+                      setPref('storeOff', list); updateApps(); refreshSettings();
+                  } })
+        ];
+        if (runningIds.indexOf(app.id) >= 0 && !app.builtin) rows.push(row({ label: 'Quit App', note: app.name + ' is running. Press OK to quit it.',
+            act: function () {
+                call('luna://com.webos.applicationManager/closeByAppId', { id: app.id }, function (r) {
+                    toast(r && r.returnValue === false ? app.name + ' could not be quit.' : app.name + ' quit.');
+                    refreshRunning();
+                });
+            } }));
+        if (deletable(app)) {
+            var armed = deleteArmed === app.id && Date.now() < deleteArmedUntil;
+            rows.push(row({ label: 'Delete App', value: armed ? 'Press OK again' : '',
+                note: 'Deletes ' + app.name + ' and its data from this TV.',
+                act: function () {
+                    if (deleteArmed === app.id && Date.now() < deleteArmedUntil) {
+                        deleteArmed = '';
+                        deleteApp(app);
+                        settings.stack.pop();
+                        refreshSettings();
+                    } else {
+                        deleteArmed = app.id;
+                        deleteArmedUntil = Date.now() + 4000;
+                        refreshSettings();
+                    }
+                } }));
+        }
+        return { title: app.name, rows: rows };
     }
 
     QtObject {
@@ -527,7 +588,11 @@ Item {
             var info = settingsView.page.rows[level.index];
             if (!info) return true;
             settingsView.pressRow();
-            if (info.page) { settings.stack.push({ page: info.page, index: 0 }); refreshSettings(); }
+            if (info.page) {
+                settings.stack.push({ page: info.page, index: 0 });
+                if (info.page === 'apps' || info.page.indexOf('app:') === 0) refreshRunning();
+                refreshSettings();
+            }
             else if (info.act) info.act();
             else settingsView.bump('right');
         } else if (key !== Qt.Key_Left && key !== Qt.Key_Right) return false;
@@ -811,7 +876,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     antialiasing: true
                     gradient: Gradient { GradientStop { position: 0; color: '#8e8e93' } GradientStop { position: 1; color: '#48484a' } }
-                    Image { anchors.centerIn: parent; width: 26; height: 26; source: 'glyphs/user.png'; sourceSize: Qt.size(64, 64); smooth: true }
+                    Glyph { anchors.centerIn: parent; width: 26; height: 26; name: 'user'; color: 'white' }
                 }
             }
         }
@@ -826,13 +891,12 @@ Item {
         }
         // The chevron rides with the Dock (it sits just above it), and leaves quickly: fixed in place during a slow fade
         // it hung over the grid as the Dock slid up past it.
-        Image {
+        Glyph {
             id: chevron
             readonly property bool on: home.mode === 'home' && home.style !== 'row'
-            x: 937; y: 750 + home.dockShift; width: 46
-            fillMode: Image.PreserveAspectFit
-            source: 'glyphs/chevron-up.png'
-            smooth: true
+            x: 937; y: 750 + home.dockShift; width: 46; height: 46
+            name: 'chevron-up'
+            symbolScale: 0.9
             opacity: on ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: chevron.on ? 300 : 120 } }
@@ -958,16 +1022,15 @@ Item {
             }
         }
 
-        // TMDB attribution, whenever its shows or images are on screen.
-        Image {
-            x: 1920 - 90 - width
-            y: 1080 - 52 - height
-            height: 22
-            fillMode: Image.PreserveAspectFit
-            source: 'glyphs/tmdb.png'
-            smooth: true
-            mipmap: true
-            opacity: home.shownScene && home.shownScene.item && !home.grid ? 0.8 : 0
+        // TMDB attribution, small, while a show is open full-screen (Up on a show).
+        Text {
+            anchors.right: parent.right
+            anchors.rightMargin: 90
+            y: 1080 - 56 - height
+            text: 'Uses the TMDB API \u00b7 not endorsed or certified by TMDB'
+            font.family: Style.font; font.pixelSize: 18
+            color: Qt.rgba(1, 1, 1, 0.5)
+            opacity: home.mode === 'shelf' && home.shownScene && home.shownScene.item ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 300 } }
         }
@@ -1029,8 +1092,7 @@ Item {
                 inGrid: r > 0
                 focused: index === home.focusIndex
                 editing: home.editing
-                // iPhone icons have rounded corners of their own: drawn larger so they fall outside the tile.
-                iconScale: home.iconScale * (app.roundIcon ? 1.35 : 1)
+                iconScale: home.iconScale
                 pressed: focused && (home.pressTarget === 'tile' || home.pressTarget === 'held')
                 Behavior on x { enabled: home.editing; NumberAnimation { duration: 320; easing.type: Easing.Bezier; easing.bezierCurve: [0.2, 0.8, 0.2, 1, 1, 1] } }
                 MouseArea {
@@ -1143,7 +1205,7 @@ Item {
                 var p = prefs; for (var k in m.prefs) p[k] = m.prefs[k];
                 prefs = p; Store.set('prefs', p);
                 liquidGlass = p.liquidGlass !== false;
-                iconSizeIndex = Math.max(0, Math.min(iconSizes.length - 1, p.iconSize || 0));
+                iconSizeIndex = sizeIndex(p.iconSizeName);
             }
             toast('Imported your Home Screen arrangement.');
             updateApps();
@@ -1157,7 +1219,7 @@ Item {
         loadTmdbKey();
         prefs = Store.get('prefs', {}) || {};
         liquidGlass = prefs.liquidGlass !== false;
-        iconSizeIndex = Math.max(0, Math.min(iconSizes.length - 1, prefs.iconSize || 0));
+        iconSizeIndex = sizeIndex(prefs.iconSizeName);
         cacheFresh = loadCache();
         updateApps();
         readApps();
