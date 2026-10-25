@@ -1,0 +1,18 @@
+{
+  "about": "ATLauncher's screensaver picks for the Aerial Screensaver add-on (org.aabytt.webos.custom-screensaver-aerial). IDs from the add-on's own videos.json; no media is included here.",
+  "sourceType": "url-4K-SDR",
+  "picks": [
+    { "id": "29BDF297-EB43-403A-8719-A78DA11A2948", "name": "San Francisco Evening" },
+    { "id": "FE876489-CBD5-479B-A8F0-1B67F0741CEA", "name": "Sonoma Horizon" },
+    { "id": "94DAB450-A650-4DFC-99B2-A0F0D8AD6649", "name": "Sonoma Evening" },
+    { "id": "097CA871-A1C2-40F7-97F0-EFAABF555BBC", "name": "Sonoma Clouds" },
+    { "id": "C3C48B18-E4AE-4A62-877D-0B0D74CDC9E0", "name": "Sonoma from Above" },
+    { "id": "6D6834A4-2F0F-479A-B053-7D4DC5CB8EB7", "name": "Sequoia Sunrise" },
+    { "id": "F88CDF4A-9681-4D1F-88FE-34F1A3C6A62B", "name": "Sequoia Morning" },
+    { "id": "97C3047F-ED39-472C-9778-CABF25D8682D", "name": "Sequoia Night" },
+    { "id": "4C108785-A7BA-422E-9C79-B0129F1D5550", "name": "Tahoe Day" },
+    { "id": "B2FC91ED-6891-4DEB-85A1-268B2B4160B6", "name": "Tahoe Morning" },
+    { "id": "52ACB9B8-75FC-4516-BC60-4550CFF3B661", "name": "Tahoe Evening" },
+    { "id": "CF6347E2-4F81-4410-8892-4830991B6C5A", "name": "Tahoe Night" }
+  ]
+}

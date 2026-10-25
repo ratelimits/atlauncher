@@ -1,0 +1,12 @@
+{
+  "id": "com.ratelimits.atlauncher",
+  "version": "1.0.0",
+  "vendor": "ratelimits",
+  "type": "qml",
+  "main": "main.qml",
+  "title": "ATLauncher",
+  "icon": "icon.png",
+  "largeIcon": "icon-large.png",
+  "noSplashOnLaunch": true,
+  "handlesRelaunch": true
+}
