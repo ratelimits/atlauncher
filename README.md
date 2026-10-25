@@ -2,9 +2,9 @@
 
 A native Home Screen for rooted LG webOS TVs, inspired by Apple TV.
 
-> [!IMPORTANT]
-> **Beta.** ATLauncher is tested on one TV so far (see [Compatibility](#compatibility)). Expect rough edges, and keep
-> `atlauncher.sh disable` handy.
+> [!WARNING]
+> **Still in testing.** ATLauncher works day to day on the TV it was built on, but it has only been tested on that one
+> model and there may be bugs. Read [Testing status](#testing-status) before replacing LG Home.
 
 ATLauncher is a QML app run by the TV's own Qt (no runtime to install), drawn on the GPU at a steady ~58 fps on a
 budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home screen.
@@ -20,6 +20,34 @@ budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home 
   Shelf, Dock and icon options; LG's quick settings; and a way back to LG Home.
 - **Remote**: Home returns to the app you were on (press again for the first app); the Settings and Input keys open
   ATLauncher's Settings and inputs row; Back works throughout, and the Magic Remote pointer stays hidden for these keys.
+
+## Testing status
+
+ATLauncher 1.0 is tested on one TV (below); other models, firmware and regions are untested. It changes how the TV
+starts, so before replacing LG Home, make sure you can reach the TV's root shell over SSH: that is how you undo it.
+
+**Getting LG Home back**
+
+- **Settings → System → Restart into LG Home** restarts once into LG Home; the restart after that brings ATLauncher back.
+- `sh /var/lib/atlauncher/atlauncher.sh disable` (SSH, as root) turns the takeover off for good, immediately.
+- If the TV ever starts to a black screen, connect over SSH and run `disable`. Homebrew Channel's own failsafe
+  options (in its settings) can also skip startup scripts.
+
+**Known issues and limits**
+
+- Enabling or disabling the takeover restarts the TV's app manager, so open apps close. Once, during development, the
+  TV rebooted at that moment; it came back with ATLauncher working.
+- Play and More Info open the app, not the show: TMDB data doesn't say where a show is inside each app.
+- App Store icons are matched by name for apps outside the built-in list and can pick the wrong app; fix it in
+  `store-ids.json` (see [App Store icons](#app-store-icons)). Seasonal App Store icons (Halloween art, etc.) appear
+  as Apple ships them.
+- Some LG apps ship a plain grey splash; add your own in [Custom art](#custom-art).
+- The Magic Remote pointer is kept hidden only for the Home, Settings and Input keys.
+
+**Reporting a bug**
+
+Open an [issue](https://github.com/ratelimits/atlauncher/issues) with your TV model and webOS version, what you did,
+and `/var/lib/atlauncher/boot.log`. For icon problems, include `/var/lib/atlauncher/storeicons/index.json`.
 
 ## Compatibility
 
@@ -37,16 +65,16 @@ and LG's `qml-runner` (present on webOS 25; other versions are untested). Report
 
 ### Homebrew Channel
 
-Add this repository in Homebrew Channel's settings (during the beta, the current beta's address):
+Add this repository in Homebrew Channel's settings:
 
 ```text
-https://github.com/ratelimits/atlauncher/releases/download/v1.0.0/repo.json
+https://github.com/ratelimits/atlauncher/releases/latest/download/repo.json
 ```
 
 ### SSH
 
 Download `com.ratelimits.atlauncher_<version>_all.ipk` from the
-[releases](https://github.com/ratelimits/atlauncher/releases). On your computer, replace `TV_IP`:
+[latest release](https://github.com/ratelimits/atlauncher/releases/latest). On your computer, replace `TV_IP`:
 
 ```sh
 scp -O com.ratelimits.atlauncher_1.0.0_all.ipk root@TV_IP:/tmp/atlauncher.ipk
@@ -217,8 +245,7 @@ Set the version in `app/appinfo.json`, add it to `CHANGELOG.md`, then push a mat
 git tag v1.0.1 && git push origin v1.0.1
 ```
 
-The **Release** workflow builds the IPK and publishes a GitHub release (a pre-release titled "Beta" while `BETA` is
-`true` in the workflow) with it, `repo.json` (for Homebrew Channel),
+The **Release** workflow builds the IPK and publishes a GitHub release with it, `repo.json` (for Homebrew Channel),
 `sha256sums`, `description.html`, the icon and the Aerial picks.
 
 ## Privacy

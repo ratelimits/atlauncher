@@ -2,7 +2,8 @@
 
 ## 1.0.0
 
-First release (beta).
+First release. Still in testing: tested on one TV (LG UR8000, webOS 25), and there may be bugs; see the README's
+Testing status.
 
 - Native QML Home Screen for LG webOS 25: Liquid Glass Dock, app grid, rim-lit icons, tilt and press physics.
 - Top Shelf: bundled splashes for popular apps, otherwise each app's own; popular shows from TMDB (your own API key)
