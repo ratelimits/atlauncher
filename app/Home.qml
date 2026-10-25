@@ -876,7 +876,14 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     antialiasing: true
                     gradient: Gradient { GradientStop { position: 0; color: '#8e8e93' } GradientStop { position: 1; color: '#48484a' } }
-                    Glyph { anchors.centerIn: parent; width: 26; height: 26; name: 'user'; color: 'white' }
+                    Glyph { anchors.centerIn: parent; width: 26; height: 26; name: 'user'; color: 'white'; visible: !home.initial }
+                    Text {
+                        anchors.centerIn: parent
+                        visible: !!home.initial
+                        text: home.initial
+                        color: 'white'
+                        font.family: Style.font; font.weight: Font.DemiBold; font.pixelSize: 20
+                    }
                 }
             }
         }
@@ -1214,8 +1221,24 @@ Item {
         try { xhr.send(); } catch (e) {}
     }
 
+    /* The letter in the circle next to the clock: profile.json's "initial", chosen during setup (atlauncher.sh enable,
+       or atlauncher.sh initial X). Without one, a person icon. */
+    property string initial: ''
+    function loadProfile() {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            var p;
+            try { p = JSON.parse(xhr.responseText); } catch (e) { return; }
+            initial = p && typeof p.initial === 'string' ? p.initial.trim().slice(0, 1).toUpperCase() : '';
+        };
+        xhr.open('GET', onTv ? 'file://' + Cat.DATA_DIR + '/profile.json' : Qt.resolvedUrl('profile.json'));
+        try { xhr.send(); } catch (e) {}
+    }
+
     // Start-up.
     Component.onCompleted: {
+        loadProfile();
         loadTmdbKey();
         prefs = Store.get('prefs', {}) || {};
         liquidGlass = prefs.liquidGlass !== false;

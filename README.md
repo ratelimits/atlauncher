@@ -71,10 +71,13 @@ This mounts ATLauncher over LG Home's folder (LG's files stay untouched undernea
 keys to ATLauncher, and installs Homebrew Channel boot hooks that re-apply it at every boot. The app manager restarts
 once, so open apps close.
 
+`enable` asks for your initial, shown in the circle next to the clock (press Enter to skip and keep the person icon).
+
 ```sh
 sh /var/lib/atlauncher/atlauncher.sh status
 sh /var/lib/atlauncher/atlauncher.sh disable     # LG Home back immediately
 sh /var/lib/atlauncher/atlauncher.sh relink      # after installing an update
+sh /var/lib/atlauncher/atlauncher.sh initial J   # the letter next to the clock ("clear" for the icon)
 ```
 
 To use LG Home once without disabling anything: **Settings → System → Restart into LG Home**; the restart after that

@@ -9,6 +9,7 @@
 # disable - undo all of that (LG Home is back immediately; open apps close).
 # status  - what is active.
 # relink  - after updating ATLauncher: link new files into the Home overlay and restart ATLauncher (no SAM restart).
+# initial - the letter shown next to the clock: atlauncher.sh initial J (or "clear" for the person icon). enable asks.
 # Internal: early (boot hook, before SAM reads apps), boot (boot hook, long-running helpers).
 # Log: /var/lib/atlauncher/boot.log
 set -u
@@ -105,6 +106,17 @@ keys_off() {
   L luna://com.webos.service.config/setConfigs "$payload" >/dev/null
 }
 
+# ---- the letter next to the clock ----
+
+set_initial() {
+  letter=$(printf '%s' "${1:-}" | cut -c1 | tr '[:lower:]' '[:upper:]')
+  if [ -n "$letter" ] && [ "$1" != clear ]; then
+    printf '{"initial":"%s"}\n' "$letter" > "$DATA/profile.json"; echo "Initial: $letter"
+  else
+    rm -f "$DATA/profile.json"; echo "No initial: a person icon is shown."
+  fi
+}
+
 # ---- long-running helpers ----
 
 # The media server learns the foreground app from a subscription to SAM and doesn't renew it when SAM restarts, so
@@ -148,6 +160,12 @@ case "${1:-status}" in
   enable)
     installed || { echo "ATLauncher is not installed ($APP)" >&2; exit 1; }
     mkdir -p "$DATA"
+    # The letter next to the clock (optional): asked only when run from a terminal.
+    if [ -t 0 ] && [ ! -f "$DATA/profile.json" ]; then
+      printf 'Your initial for the top-right of the Home Screen (Enter to skip): '
+      read -r letter || letter=''
+      [ -n "$letter" ] && set_initial "$letter"
+    fi
     copy_tools
     hooks_on
     keys_on
@@ -172,6 +190,15 @@ case "${1:-status}" in
     sleep 3; media_check
     log "disabled"
     echo "LG Home restored. ATLauncher stays installed as a normal app; its data is in $DATA."
+    ;;
+  initial)
+    mkdir -p "$DATA"
+    set_initial "${2:-}"
+    for p in /proc/[0-9]*; do
+      c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
+      case "$c" in /usr/bin/qml-runner*com.webos.app.home*) kill "${p#/proc/}" 2>/dev/null ;; esac
+    done
+    mounted && { sleep 2; open_home; }
     ;;
   relink)
     mounted || { echo "ATLauncher is not the Home app"; exit 0; }
@@ -213,5 +240,5 @@ case "${1:-status}" in
     sleep 20; media_check
     sleep 100; media_check
     ;;
-  *) echo "usage: atlauncher.sh enable|disable|status|relink" >&2; exit 2 ;;
+  *) echo "usage: atlauncher.sh enable|disable|status|relink|initial <letter|clear>" >&2; exit 2 ;;
 esac
