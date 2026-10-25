@@ -2,6 +2,8 @@
 
 A native Home Screen for rooted LG webOS TVs, inspired by Apple TV.
 
+![ATLauncher on an LG UR8000, moving through the Home Screen](docs/screenshots/demo.gif)
+
 > [!WARNING]
 > **Still in testing.** ATLauncher works day to day on the TV it was built on, but it has only been tested on that one
 > model and there may be bugs. Read [Testing status](#testing-status) before replacing LG Home.
@@ -20,6 +22,16 @@ budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home 
   Shelf, Dock and icon options; LG's quick settings; and a way back to LG Home.
 - **Remote**: Home returns to the app you were on (press again for the first app); the Settings and Input keys open
   ATLauncher's Settings and inputs row; Back works throughout, and the Magic Remote pointer stays hidden for these keys.
+
+| | |
+| --- | --- |
+| ![Home Screen with the Top Shelf and Dock](docs/screenshots/home.jpg) | ![App grid with App Store and TV icons](docs/screenshots/app-grid.jpg) |
+| Home Screen: Top Shelf above the Liquid Glass Dock | App grid: App Store tiles, the TV's own icons, SF Symbols gear |
+| ![Hold-OK app menu](docs/screenshots/app-menu.jpg) | ![Settings](docs/screenshots/settings.jpg) |
+| Hold OK: Quit App, Edit Home Screen, Delete App | Settings |
+
+<sub>Screenshots from an LG UR8000 with SF Pro installed. Show art comes from TMDB at run time and is not part of
+ATLauncher.</sub>
 
 ## Testing status
 
