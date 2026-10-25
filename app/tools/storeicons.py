@@ -4,6 +4,8 @@ app and download its Apple TV tile (the flat render of its tvOS icon, 500x300) i
 Apps without an Apple TV version keep their own LG icon (no iPhone icon is used). Nothing is bundled: this runs on the TV (started by
 apps-watch.sh) and only talks to itunes.apple.com, apps.apple.com and Apple's image server.
 
+Run with --refetch <webOS app id> to download one app's icon again.
+
 Which App Store app: /var/lib/atlauncher/store-ids.json first ({"<webOS app id>": <App Store id>, or null to leave
 that app's LG icon}), then a built-in list for popular apps, then a search by the app's name that only accepts a
 close match. Hits are refreshed monthly; misses are retried after a week."""
@@ -104,6 +106,9 @@ def main():
         index = {}
     if index.get('_version') != INDEX_VERSION:
         index = {'_version': INDEX_VERSION}
+    # --refetch <app id>: download that app's icon again (Settings > Apps > <app> > App Store Icon turned back on).
+    if len(sys.argv) > 2 and sys.argv[1] == '--refetch':
+        index.pop(sys.argv[2], None)
     now, changed = time.time(), False
     for a in apps:
         app_id = a.get('id', '')

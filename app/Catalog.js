@@ -38,7 +38,8 @@ var KNOWN = [
     { id: 'com.webos.app.hdmi4', name: 'HDMI 4', builtin: true },
     { id: 'org.webosbrew.hbchannel', name: 'Homebrew' },
     // Built into ATLauncher, not a webOS app: opens the Settings screen.
-    { id: SETTINGS_ID, name: 'Settings', tile: 'icons/atlauncher.settings.png', shelf: ['#6e6e73', '#1c1c1e'], builtin: true }
+    // With SF Pro installed its tile is drawn with the SF Symbol `glyph` (gear) instead of the picture.
+    { id: SETTINGS_ID, name: 'Settings', tile: 'icons/atlauncher.settings.png', glyph: 'system', shelf: ['#6e6e73', '#1c1c1e'], builtin: true }
 ];
 
 // The permanent bottom row (in this order).

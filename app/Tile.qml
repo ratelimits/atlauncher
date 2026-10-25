@@ -19,6 +19,8 @@ Item {
     property bool showLabel: inGrid && focused
 
     readonly property real lift: inGrid ? -4 : 0
+    // A built-in tile drawn with an SF Symbol (Settings' gear) when SF Pro is installed, instead of its picture.
+    readonly property bool symbolTile: !!app.glyph && Style.symbol(app.glyph) !== ''
     z: focused ? 2 : 0
 
     function kick(dx, dy) {
@@ -107,11 +109,28 @@ Item {
         RoundedImage {
             id: curated
             anchors.fill: parent
-            visible: !!tile.app.tile
+            visible: !!tile.app.tile && !tile.symbolTile
             source: tile.app.tile || ''
             radius: 28
             lit: tile.focused ? 1 : 0
             Behavior on lit { NumberAnimation { duration: 250 } }
+        }
+        Rectangle {
+            anchors.fill: parent
+            visible: tile.symbolTile
+            radius: 28
+            antialiasing: true
+            gradient: Gradient {
+                GradientStop { position: 0; color: '#8e8e93' }
+                GradientStop { position: 1; color: '#3a3a3e' }
+            }
+            Glyph { anchors.centerIn: parent; width: 84; height: 84; name: tile.app.glyph || ''; color: 'white' }
+            TileLight {
+                anchors.fill: parent
+                radius: 28
+                lit: tile.focused ? 1 : 0
+                Behavior on lit { NumberAnimation { duration: 250 } }
+            }
         }
         // The app's own icon, scaled up on its own edge colour (IconTile; size from Settings > Appearance).
         IconTile {

@@ -7,22 +7,24 @@ budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home 
 
 - **Dock and app grid**: a Liquid Glass Dock whose rounded edge bends the picture behind it, a 6-column grid,
   rim-lit icons, and tilt-toward-the-move focus.
-- **Top Shelf**: each app's own splash; rest on Netflix, Prime Video, Disney+, Hulu or Apple TV for 5 seconds
-  and its popular shows appear from [TMDB](https://www.themoviedb.org) (full-screen carousel or a "Top Shows" row).
+- **App icons**: each app's Apple TV icon from the App Store, fetched by the TV; apps without one keep their own
+  webOS icon. The TV's own icons for its HDMI inputs, Internet, App Store and AirPlay.
+- **Top Shelf**: a splash for each app; rest on Netflix, Prime Video, Disney+, Hulu or Apple TV for 5 seconds and
+  its popular shows appear from [TMDB](https://www.themoviedb.org) (full-screen carousel or a "Top Shows" row).
 - **App menu**: hold OK on an app for Quit App (while it runs), Edit Home Screen and Delete App.
-- **Settings**: per app, show or hide it, choose its App Store icon, quit or delete it; rearrange; Top Shelf and Dock
-  options; LG's quick settings; and a way back to LG Home.
+- **Settings**: per app, show or hide it, turn its App Store icon on or off, quit or delete it; rearrange apps; Top
+  Shelf, Dock and icon options; LG's quick settings; and a way back to LG Home.
 - **Remote**: Home returns to the app you were on (press again for the first app); the Settings and Input keys open
-  ATLauncher's Settings and inputs row; Back works throughout.
-
-No third-party artwork is bundled: tiles and splashes come from the apps installed on your TV, and you can add your
-own (see [Custom art](#custom-art)).
+  ATLauncher's Settings and inputs row; Back works throughout, and the Magic Remote pointer stays hidden for these keys.
 
 ## Compatibility
 
 | TV | Model identifier | webOS | Takeover |
 | -- | ---------------- | ----- | -------- |
-| LG (2025 lineup, Realtek RTD2875N) | _to be filled in_ | 25 (10.3.1) | ✅ |
+| LG UR8000 | `??UR8000AUA` | 25 (10.3.1) | ✅ |
+
+> [!NOTE]
+> `??` is the screen size. The UR8000 shipped with webOS 23 and runs webOS 25 after LG's webOS Re:New update.
 
 ATLauncher needs a **rooted** TV with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) (elevated)
 and LG's `qml-runner` (present on webOS 25; other versions are untested). Reports for other models are welcome.
@@ -39,7 +41,8 @@ https://github.com/ratelimits/atlauncher/releases/latest/download/repo.json
 
 ### SSH
 
-On your computer, replace `TV_IP`:
+Download `com.ratelimits.atlauncher_<version>_all.ipk` from the
+[latest release](https://github.com/ratelimits/atlauncher/releases/latest). On your computer, replace `TV_IP`:
 
 ```sh
 scp -O com.ratelimits.atlauncher_1.0.0_all.ipk root@TV_IP:/tmp/atlauncher.ipk
@@ -69,15 +72,14 @@ sh /media/developer/apps/usr/palm/applications/com.ratelimits.atlauncher/tools/a
 
 This mounts ATLauncher over LG Home's folder (LG's files stay untouched underneath), maps the Home, Settings and Input
 keys to ATLauncher, and installs Homebrew Channel boot hooks that re-apply it at every boot. The app manager restarts
-once, so open apps close.
-
-`enable` asks for your initial, shown in the circle next to the clock (press Enter to skip and keep the person icon).
+once, so open apps close. `enable` also asks for your initial, shown in the circle next to the clock (press Enter to
+skip and keep the person icon).
 
 ```sh
 sh /var/lib/atlauncher/atlauncher.sh status
 sh /var/lib/atlauncher/atlauncher.sh disable     # LG Home back immediately
 sh /var/lib/atlauncher/atlauncher.sh relink      # after installing an update
-sh /var/lib/atlauncher/atlauncher.sh initial J   # the letter next to the clock ("clear" for the icon)
+sh /var/lib/atlauncher/atlauncher.sh initial J   # the letter next to the clock ("clear" for the person icon)
 ```
 
 To use LG Home once without disabling anything: **Settings → System → Restart into LG Home**; the restart after that
@@ -94,6 +96,8 @@ brings ATLauncher back. Boot log: `/var/lib/atlauncher/boot.log`.
 - The window declares `_WEBOS_ACCESS_POLICY_KEYS_BACK`, so Back stays inside ATLauncher instead of offering to exit.
 - If the app manager ever restarts after the media server, the media server loses track of which app is in front
   and every app's video stays black (sound plays). ATLauncher's boot step checks for this and restarts the media server.
+- `apps-watch.sh` keeps the installed-app list (`/var/lib/atlauncher/apps.json`), each app's own icon and splash, and
+  the App Store icons current.
 
 </details>
 
@@ -106,20 +110,20 @@ Popular shows need your own free API key: create one at
 echo YOUR_API_KEY | ssh root@TV_IP 'mkdir -p /var/lib/atlauncher && cat > /var/lib/atlauncher/tmdb.key'
 ```
 
-Reopen ATLauncher. Without a key, each app's own splash is shown. You can also turn it off in **Settings → Top Shelf**.
-
-This product uses the TMDB API but is not endorsed or certified by TMDB.
+Reopen ATLauncher. Without a key, each app's splash is shown. You can also turn it off in **Settings → Top Shelf**.
+While a show is open full-screen, a small credit reads "Uses the TMDB API · not endorsed or certified by TMDB".
 
 ## App Store icons
 
 With **Settings → Appearance → App Store Icons** on (the default), the TV looks each app up on Apple's App Store and
-uses its Apple TV icon as the tile. They're downloaded once by the TV into `/var/lib/atlauncher/storeicons/` (none
-are bundled); apps without an Apple TV version keep their own LG icon, scaled by **Icon Size** (Medium by default).
-Each app's own page in **Settings → Apps** can turn its App Store icon off. Popular apps
-use exact App Store ids; others are matched by name, accepting only a close match.
+uses its Apple TV icon as the tile. Icons are downloaded once by the TV into `/var/lib/atlauncher/storeicons/` (none
+are bundled) and refreshed monthly. Apps without an Apple TV version keep their own webOS icon, drawn at
+**Settings → Appearance → Icon Size** (Medium by default). Popular apps use exact App Store ids; others are matched by
+name, accepting only a close match.
 
-To fix a wrong match, or keep an app's LG icon, add it to `/var/lib/atlauncher/store-ids.json` (the App Store id is
-the number in its `apps.apple.com` link):
+In **Settings → Apps → *app***, **App Store Icon** turns it off for that app; turning it back on downloads it again.
+To fix a wrong match, or never look an app up, add it to `/var/lib/atlauncher/store-ids.json` (the App Store id is the
+number in its `apps.apple.com` link):
 
 ```json
 { "io.strem.tv": null, "some.app.id": 123456789 }
@@ -127,7 +131,7 @@ the number in its `apps.apple.com` link):
 
 ## Custom art
 
-Put your own pictures on the TV, named by app id:
+Your own pictures on the TV, named by app id, are used before anything else:
 
 | Folder | Size | Used for |
 | ------ | ---- | -------- |
@@ -135,6 +139,15 @@ Put your own pictures on the TV, named by app id:
 | `/var/lib/atlauncher/custom/art/<app id>.png` (or `.jpg`) | 1920×1080 | the app's Top Shelf splash |
 
 App ids are listed in `/var/lib/atlauncher/apps.json`. Changes appear within about five minutes, or after a restart.
+
+## Moving your arrangement
+
+To bring an app order over from another launcher, put `/var/lib/atlauncher/import.json` on the TV, then reopen
+ATLauncher. It is applied once per `id` (change the `id` to apply it again):
+
+```json
+{ "id": "my-layout-1", "order": ["netflix", "youtube.leanback.v4", "hulu"], "hidden": ["some.app.id"] }
+```
 
 ## Recommended screensaver
 
@@ -156,10 +169,10 @@ run `apply-picks.sh` again afterwards. No video is included with ATLauncher: the
 
 ## Using SF Pro (optional)
 
-ATLauncher ships with [Inter](https://rsms.me/inter/). If you'd rather use Apple's SF Pro, download it yourself from
-[developer.apple.com/fonts](https://developer.apple.com/fonts/) (it is not included: Apple's license doesn't allow
-redistributing it, and limits it to Apple platforms, so check it covers your use). Copy these four files from the
-installer to the TV, then reopen ATLauncher:
+ATLauncher ships with [Inter](https://rsms.me/inter/) and [Lucide](https://lucide.dev) icons. If you'd rather use
+Apple's SF Pro, download it yourself from [developer.apple.com/fonts](https://developer.apple.com/fonts/) (it is not
+included: Apple's license doesn't allow redistributing it, and limits it to Apple platforms, so check it covers your
+use). Copy these four files from the installer to the TV, then reopen ATLauncher:
 
 ```sh
 ssh root@TV_IP mkdir -p /var/lib/atlauncher/fonts
@@ -167,19 +180,10 @@ scp -O SF-Pro-Display-Regular.otf SF-Pro-Display-Medium.otf SF-Pro-Display-Semib
   SF-Pro-Display-Bold.otf root@TV_IP:/var/lib/atlauncher/fonts/
 ```
 
-ATLauncher uses SF Pro whenever the regular weight is there (`.otf` or `.ttf`), and Inter otherwise. With SF Pro, ATLauncher's icons
-(Settings, the app menu, the chevron) are its SF Symbols too, drawn from the font you installed; with Inter they are
-Lucide icons. Delete the folder
-to go back. For the desktop preview, put the files in `app/userfonts/` (ignored by git and never packaged).
-
-## Moving your arrangement
-
-To bring an app order over from another launcher, put `/var/lib/atlauncher/import.json` on the TV, then reopen
-ATLauncher. It is applied once per `id` (change the `id` to apply it again):
-
-```json
-{ "id": "my-layout-1", "order": ["netflix", "youtube.leanback.v4", "hulu"], "hidden": ["some.app.id"] }
-```
+ATLauncher uses SF Pro whenever the regular weight is there (`.otf` or `.ttf`), and Inter otherwise. With SF Pro, its
+icons are SF Symbols drawn from the font you installed: the Settings tile and pictures, the app menu, the chevron and
+the person icon. Delete the folder to go back. For the desktop preview, put the files in `app/userfonts/` (ignored by
+git and never packaged).
 
 ## Development
 
@@ -192,24 +196,35 @@ QML_XHR_ALLOW_FILE_READ=1 /opt/homebrew/opt/qt@5/bin/qmlscene app/preview.qml
 Arrows move, Return is OK (hold for the app menu), Esc is Back. For TMDB in the preview, put your key in
 `app/tmdb.key` (ignored by git). Scripted runs: `--steps="keys:Right,Up wait:800 shot:/tmp/a.png"`.
 
-Build a release (needs Node for LG's `ares-package`, fetched with `npx`):
+Build locally (needs Node for LG's `ares-package`, fetched with `npx`):
 
 ```sh
-scripts/build.sh            # dist/: IPK, sha256sums, repo.json, description.html, app-icon-large.png
-scripts/render-assets.py    # re-render glyphs, built-in tiles and the app icon (needs Google Chrome)
+scripts/build.sh            # dist/: IPK, sha256sums, repo.json, description.html, app-icon-large.png, aerial picks
+scripts/render-assets.py    # re-render the Lucide glyphs, Settings tile, AirPlay splash and app icon (needs Chrome)
 ```
 
 ATLauncher targets the TV's Qt 5.12: no `required` properties, `?.` or `??`.
 
+### Releases
+
+Set the version in `app/appinfo.json`, add it to `CHANGELOG.md`, then push a matching tag:
+
+```sh
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+The **Release** workflow builds the IPK and publishes a GitHub release with it, `repo.json` (for Homebrew Channel),
+`sha256sums`, `description.html`, the icon and the Aerial picks.
+
 ## Privacy
 
 ATLauncher talks to the TV's own services; with your TMDB key, to `api.themoviedb.org` and `image.tmdb.org`; and with
-App Store Icons on, to `itunes.apple.com`, `apps.apple.com` and Apple's image server (`*.mzstatic.com`) to fetch each
-app's icon once. There is no telemetry. Settings, the TMDB cache and the icons stay on the TV.
+App Store Icons on, to `itunes.apple.com`, `apps.apple.com` and Apple's image server (`*.mzstatic.com`) to fetch app
+icons. There is no telemetry. Settings, the TMDB cache and the icons stay on the TV.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Bundled fonts and icons are under their own licenses, see [NOTICE.md](NOTICE.md).
+MIT, see [LICENSE](LICENSE). Bundled fonts, icons and artwork are covered in [NOTICE.md](NOTICE.md).
 
-ATLauncher is not affiliated with LG, Apple, TMDB or any app or brand shown in its UI. Apple TV is a trademark of
-Apple Inc.; webOS is a trademark of LG Electronics.
+ATLauncher is not affiliated with LG, Apple, TMDB or any app or brand shown in its UI. App names, logos and splash art
+belong to their owners. Apple TV is a trademark of Apple Inc.; webOS is a trademark of LG Electronics.

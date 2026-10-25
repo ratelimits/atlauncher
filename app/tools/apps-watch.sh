@@ -75,8 +75,27 @@ store() {
   ( flock -n 8 || exit 0; python3 "$DATA/storeicons.py"; [ $? -eq 3 ] && write ) 8>/tmp/atlauncher-store.lock &
 }
 
+# Refetch requests from Settings > Apps > <app> > App Store Icon: ATLauncher stores "<app id>:<time>" in its settings
+# (settingsservice, category atlauncher); each new one downloads that app's icon again. The last one handled is kept
+# in refetch.done, so renewing the subscription (which repeats the current value) doesn't refetch again.
+refetch_watch() {
+  while :; do
+    timeout 300 luna-send -i luna://com.webos.settingsservice/getSystemSettings \
+      '{"app_id":"com.ratelimits.atlauncher","category":"atlauncher","keys":["refetch"],"subscribe":true}' 2>/dev/null |
+    while read -r line; do
+      req=$(echo "$line" | sed -n 's/.*"refetch": *"\([^"]*\)".*/\1/p')
+      [ -n "$req" ] || continue
+      [ "$req" = "$(cat "$DATA/refetch.done" 2>/dev/null)" ] && continue
+      echo "$req" > "$DATA/refetch.done"
+      ( flock 8; python3 "$DATA/storeicons.py" --refetch "${req%%:*}"; [ $? -eq 3 ] && write ) 8>/tmp/atlauncher-store.lock
+    done
+    sleep 1
+  done
+}
+
 exec 9>/tmp/atlauncher-apps-watch.lock
 flock -n 9 || exit 0
+refetch_watch &
 while :; do
   write
   store

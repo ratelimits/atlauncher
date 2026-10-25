@@ -504,6 +504,12 @@ Item {
             if (settings.open) refreshSettings();
         });
     }
+    // Ask the TV side (apps-watch.sh, which subscribes to this setting) to download an app's App Store icon again.
+    function requestRefetch(id) {
+        call('luna://com.webos.settingsservice/setSystemSettings',
+             { app_id: Cat.OWN_ID, category: 'atlauncher', settings: { refetch: id + ':' + Date.now() } });
+        toast('Downloading its Apple TV icon again\u2026');
+    }
     function appPage(id) {
         var app = candidates.filter(function (a) { return a.id === id; })[0];
         if (!app) return { title: 'Apps', rows: [] };
@@ -522,6 +528,7 @@ Item {
                       if (!app.storeTile) return;
                       var list = (prefs.storeOff || []).filter(function (x) { return x !== app.id; });
                       if (!storeOff) list.push(app.id);
+                      else requestRefetch(app.id);   // turned back on: download it again from the App Store
                       setPref('storeOff', list); updateApps(); refreshSettings();
                   } })
         ];

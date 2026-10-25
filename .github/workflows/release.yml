@@ -1,0 +1,45 @@
+name: Release
+
+# Push a tag matching app/appinfo.json's version (v1.0.0, ...) to build the IPK and publish it as a GitHub release,
+# with repo.json for Homebrew Channel. The release notes are that version's section of CHANGELOG.md.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Check the tag matches appinfo.json
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('app/appinfo.json'))['version'])")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME doesn't match app/appinfo.json version $version" >&2
+            exit 1
+          fi
+
+      - name: Build
+        run: REPO="$GITHUB_REPOSITORY" sh scripts/build.sh
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="## ${GITHUB_REF_NAME#v}" '$0 == v {on = 1; next} /^## / && on {exit} on' CHANGELOG.md > notes.md
+          printf '\nInstall: see the [README](%s/%s#installation).\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" >> notes.md
+          cat notes.md
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --title "ATLauncher ${GITHUB_REF_NAME#v}" --notes-file notes.md --latest \
+            dist/*.ipk dist/repo.json dist/sha256sums dist/description.html dist/app-icon-large.png \
+            dist/atlauncher-aerial-picks.tar.gz
