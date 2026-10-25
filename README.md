@@ -88,7 +88,7 @@ luna-send -i luna://com.webos.appInstallService/dev/install \
   '{"id":"com.ratelimits.atlauncher","ipkUrl":"/tmp/atlauncher.ipk","subscribe":true}'
 ```
 
-The command keeps reporting progress after the install: once it shows `"statusValue":30` / installed, press Ctrl+C.
+The command keeps reporting progress after the install: once its output says `installed`, press Ctrl+C.
 Open **ATLauncher** from the app list to try it as a normal app. To update later, install the new IPK the same way,
 then run `sh /var/lib/atlauncher/atlauncher.sh relink` if ATLauncher is your Home app.
 
