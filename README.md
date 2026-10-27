@@ -1,5 +1,8 @@
 # ATLauncher
 
+> [!NOTE]
+> After installation, please create a issue with your TV model and webOS version to add to the compatibility list
+
 A native Home Screen for rooted LG webOS TVs, inspired by Apple TV.
 
 ![ATLauncher on an LG UR8000, moving through the Home Screen](docs/screenshots/demo.gif)
