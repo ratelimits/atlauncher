@@ -38,7 +38,7 @@ Item {
         frostA: menu.backdrop ? menu.backdrop.back.frost : null
         sharpB: menu.backdrop ? menu.backdrop.front.sharp : null
         frostB: menu.backdrop ? menu.backdrop.front.frost : null
-        mix: menu.backdrop ? menu.backdrop.mix : 1
+        fade: menu.backdrop ? menu.backdrop.mix : 1
         radius: menu.radius
         edge: 24
         liquid: 1

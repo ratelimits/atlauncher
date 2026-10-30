@@ -1,6 +1,6 @@
 import QtQuick 2.12
 
-/* Liquid Glass, as one fragment shader over the two backdrop scenes (back + front, crossfading by `mix`): the slab
+/* Liquid Glass, as one fragment shader over the two backdrop scenes (back + front, crossfading by `fade`): the slab
    magnifies the sharp art a little (mag); within `band` px of its rounded rim the picture bends further inward,
    s(d) = bend (1 - d/band)^2, so lines bow where they cross the edge; the body fades to the frost over `edge` px;
    the art's own colour tints it; light from the top left catches the rim (a sharp highlight, a weaker reflection
@@ -17,7 +17,7 @@ ShaderEffect {
     property variant frostA
     property variant sharpB
     property variant frostB
-    property real mix: 0
+    property real fade: 0
     property real radius: 66
     property real edge: 36
     property real liquid: 1
@@ -38,7 +38,7 @@ ShaderEffect {
         uniform sampler2D frostA;
         uniform sampler2D sharpB;
         uniform sampler2D frostB;
-        uniform lowp float mix;
+        uniform lowp float fade;
         uniform highp vec2 px;
         uniform highp vec2 origin;
         uniform highp float radius;
@@ -54,11 +54,11 @@ ShaderEffect {
 
         lowp vec3 sharpAt(highp vec2 s) {
             highp vec2 uv = clamp(s / SCREEN, 0.0, 1.0);
-            return mix(texture2D(sharpA, uv).rgb, texture2D(sharpB, uv).rgb, mix);
+            return mix(texture2D(sharpA, uv).rgb, texture2D(sharpB, uv).rgb, fade);
         }
         lowp vec3 frostAt(highp vec2 s) {
             highp vec2 uv = clamp(s / SCREEN, 0.0, 1.0);
-            return mix(texture2D(frostA, uv).rgb, texture2D(frostB, uv).rgb, mix);
+            return mix(texture2D(frostA, uv).rgb, texture2D(frostB, uv).rgb, fade);
         }
 
         void main() {
