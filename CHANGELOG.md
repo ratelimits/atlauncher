@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- Fix: Liquid Glass (the Dock, app menu and clock pill) did not draw on the LG C5 (webOS 25, 10.3.1): the glass
+  shader's `mix` uniform shadowed GLSL's built-in `mix()`, and it is now `fade` (#3, thanks @n4bcb).
+- The LG C5 (`OLEDC5??AUA`, webOS 25) is on the compatibility list.
+
 ## 1.0.0
 
 First release. Still in testing: tested on one TV (LG UR8000, webOS 25), and there may be bugs; see the README's
@@ -21,7 +27,3 @@ Testing status.
 - Inter and Lucide icons by default; SF Pro Display and its SF Symbols instead if you install SF Pro yourself in
   `/var/lib/atlauncher/fonts/` (not bundled).
 - Recommended screensaver: picks for the Aerial Screensaver add-on (`atlauncher-aerial-picks.tar.gz`).
-
-## Unreleased
-
-- Fix: Liquid Glass (Dock, app menu, clock pill) did not draw on the LG C5 (webOS 25, 10.3.1). The glass shader's `mix` uniform shadowed GLSL's built-in `mix()`; it is now `fade`.

@@ -8,8 +8,8 @@ A native Home Screen for rooted LG webOS TVs, inspired by Apple TV.
 ![ATLauncher on an LG UR8000, moving through the Home Screen](docs/screenshots/demo.gif)
 
 > [!WARNING]
-> **Still in testing.** ATLauncher works day to day on the TV it was built on, but it has only been tested on that one
-> model and there may be bugs. Read [Testing status](#testing-status) before replacing LG Home.
+> **Still in testing.** ATLauncher works day to day on the TV it was built on, but it has only been tested on a few
+> models and there may be bugs. Read [Testing status](#testing-status) before replacing LG Home.
 
 ATLauncher is a QML app run by the TV's own Qt (no runtime to install), drawn on the GPU at a steady ~58 fps on a
 budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home screen.
@@ -38,7 +38,7 @@ ATLauncher.</sub>
 
 ## Testing status
 
-ATLauncher 1.0 is tested on one TV (below); other models, firmware and regions are untested. It changes how the TV
+ATLauncher 1.0 is tested on the TVs below; other models, firmware and regions are untested. It changes how the TV
 starts, so before replacing LG Home, make sure you can reach the TV's root shell over SSH: that is how you undo it.
 
 **Getting LG Home back**
@@ -93,7 +93,7 @@ Download `com.ratelimits.atlauncher_<version>_all.ipk` from the
 [latest release](https://github.com/ratelimits/atlauncher/releases/latest). On your computer, replace `TV_IP`:
 
 ```sh
-scp -O com.ratelimits.atlauncher_1.0.0_all.ipk root@TV_IP:/tmp/atlauncher.ipk
+scp -O com.ratelimits.atlauncher_1.0.1_all.ipk root@TV_IP:/tmp/atlauncher.ipk
 ssh root@TV_IP
 ```
 
