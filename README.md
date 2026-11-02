@@ -69,6 +69,7 @@ and `/var/lib/atlauncher/boot.log`. For icon problems, include `/var/lib/atlaunc
 | TV | Model identifier | webOS | Takeover |
 | -- | ---------------- | ----- | -------- |
 | LG UR8000 | `??UR8000AUA` | 25 (10.3.1) | ✅ |
+| LG C5 | `OLEDC5??AUA` | 25 (10.3.1) | ✅ |
 
 > [!NOTE]
 > `??` is the screen size. The UR8000 shipped with webOS 23 and runs webOS 25 after LG's webOS Re:New update.

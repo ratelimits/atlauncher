@@ -21,3 +21,7 @@ Testing status.
 - Inter and Lucide icons by default; SF Pro Display and its SF Symbols instead if you install SF Pro yourself in
   `/var/lib/atlauncher/fonts/` (not bundled).
 - Recommended screensaver: picks for the Aerial Screensaver add-on (`atlauncher-aerial-picks.tar.gz`).
+
+## Unreleased
+
+- Fix: Liquid Glass (Dock, app menu, clock pill) did not draw on the LG C5 (webOS 25, 10.3.1). The glass shader's `mix` uniform shadowed GLSL's built-in `mix()`; it is now `fade`.

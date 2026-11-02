@@ -856,7 +856,7 @@ Item {
                 screenY: status.y
                 sharpA: backdrop.back.sharp; frostA: backdrop.back.frost
                 sharpB: backdrop.front.sharp; frostB: backdrop.front.frost
-                mix: backdrop.mix
+                fade: backdrop.mix
                 radius: 30; edge: 18; liquid: 0
                 frosted: backdrop.frostLevel
                 dark: 0.18 + home.rowShade * 0.82
@@ -1081,7 +1081,7 @@ Item {
             height: 228
             sharpA: backdrop.back.sharp; frostA: backdrop.back.frost
             sharpB: backdrop.front.sharp; frostB: backdrop.front.frost
-            mix: backdrop.mix
+            fade: backdrop.mix
             radius: 66
             edge: home.liquidGlass ? 36 : 24
             liquid: home.liquidGlass ? 1 : 0
