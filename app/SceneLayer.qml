@@ -1,5 +1,5 @@
-import QtQuick 2.12
-import QtGraphicalEffects 1.12
+import QtQuick 2.9
+import QtGraphicalEffects 1.0
 
 /* One backdrop scene: the sharp art (decoded straight to 1920x1080) or a brand gradient, and its frost — the art
    shrunk to 192x108 on the GPU, blurred there, and drawn scaled up (the blur is a small pass whenever the art

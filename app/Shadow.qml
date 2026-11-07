@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* A soft drop shadow for a rounded rectangle (CSS box-shadow 0 dy blur rgba(0,0,0,strength)), one shader pass.
    Place it over the shape's own rectangle; it draws `blur` px beyond it on every side. */

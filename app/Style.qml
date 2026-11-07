@@ -1,5 +1,5 @@
 pragma Singleton
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* ATLauncher's typeface. Inter is bundled (SIL OFL). If you install Apple's SF Pro Display yourself (it is not bundled:
    Apple's license doesn't allow redistributing it), ATLauncher uses it instead: put SF-Pro-Display-Regular, -Medium,

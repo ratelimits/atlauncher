@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* A tile for an app without its own 5:3 art: the app's webOS icon (usually square, with its own background and lots
    of padding) drawn `iconScale` times the tile's height, centred, on a background taken from the icon's own edge

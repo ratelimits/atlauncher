@@ -1,6 +1,6 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
-import QtQuick.Window 2.12
+import QtQuick.Window 2.3
 import "Catalog.js" as Cat
 import "Store.js" as Store
 import "Tmdb.js" as Tmdb
@@ -827,16 +827,21 @@ Item {
             gradient: Gradient { GradientStop { position: 0; color: 'transparent' } GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.34) } }
         }
         // Full-screen carousel / app view: darken the left for the title and buttons.
-        Rectangle {
+        Item {
             width: 1190; height: 1080
             opacity: home.carouselFull ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 400 } }
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0; color: Qt.rgba(0, 0, 0, 0.55) }
-                GradientStop { position: 0.645; color: Qt.rgba(0, 0, 0, 0.18) }
-                GradientStop { position: 1; color: 'transparent' }
+            // Left to right: a vertical gradient turned -90 degrees (Gradient.orientation needs Qt 5.12; webOS 5 has 5.9).
+            Rectangle {
+                anchors.centerIn: parent
+                width: 1080; height: 1190
+                rotation: -90
+                gradient: Gradient {
+                    GradientStop { position: 0; color: Qt.rgba(0, 0, 0, 0.55) }
+                    GradientStop { position: 0.645; color: Qt.rgba(0, 0, 0, 0.18) }
+                    GradientStop { position: 1; color: 'transparent' }
+                }
             }
         }
 

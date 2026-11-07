@@ -253,7 +253,9 @@ scripts/build.sh            # dist/: IPK, sha256sums, repo.json, description.htm
 scripts/render-assets.py    # re-render the Lucide glyphs, Settings tile, AirPlay splash and app icon (needs Chrome)
 ```
 
-ATLauncher targets the TV's Qt 5.12: no `required` properties, `?.` or `??`.
+ATLauncher targets the TV's Qt 5.12: no `required` properties, `?.` or `??`. Imports stay at Qt 5.9 versions
+(`QtQuick 2.9`, `QtGraphicalEffects 1.0`) and nothing newer than 5.9 is used (no `Gradient.orientation`), so it also
+loads on webOS 5 (2020 TVs).
 
 ### Releases
 

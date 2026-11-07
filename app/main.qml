@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import Eos.Window 0.1
 import WebOSServices 1.0
 import WebOS.Global 1.0

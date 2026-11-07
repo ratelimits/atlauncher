@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* Liquid Glass, as one fragment shader over the two backdrop scenes (back + front, crossfading by `fade`): the slab
    magnifies the sharp art a little (mag); within `band` px of its rounded rim the picture bends further inward,
