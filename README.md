@@ -179,6 +179,14 @@ number in its `apps.apple.com` link):
 { "io.strem.tv": null, "some.app.id": 123456789 }
 ```
 
+### App list and icons without replacing LG Home
+
+To keep LG Home as default while trying ATLauncher as an ordinary app, copy
+`scripts/setup-standalone.sh` to the TV and run it as root after installing the IPK.
+It installs the app-list and App Store icon helpers under `/var/lib/atlauncher`
+and starts their watcher now and at boot, without enabling the Home takeover.
+Run it again after updating ATLauncher to refresh the copied helpers.
+
 ## Custom art
 
 Your own pictures on the TV, named by app id, are used before anything else:
