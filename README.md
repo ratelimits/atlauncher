@@ -70,9 +70,16 @@ and `/var/lib/atlauncher/boot.log`. For icon problems, include `/var/lib/atlaunc
 | -- | ---------------- | ----- | -------- |
 | LG UR8000 | `??UR8000AUA` | 25 (10.3.1) | ✅ |
 | LG C5 | `OLEDC5??AUA` | 25 (10.3.1) | ✅ |
+| LG B4 (65-inch) | `OLED65B49LA.DEUQLJP` | 25 (10.3.2) | ✅ |
 
 > [!NOTE]
 > `??` is the screen size. The UR8000 shipped with webOS 23 and runs webOS 25 after LG's webOS Re:New update.
+
+The [LG B4 report](https://github.com/ratelimits/atlauncher/issues/11) uses firmware `33.31.75` and ATLauncher 1.0.1 with the proposed
+[app-launch](https://github.com/ratelimits/atlauncher/pull/6), [QML-registration](https://github.com/ratelimits/atlauncher/pull/9),
+[visual-arrangement](https://github.com/ratelimits/atlauncher/pull/7) and [locale/clock](https://github.com/ratelimits/atlauncher/pull/8) fixes. Its owner
+confirmed app launching and visual app arrangement; Home takeover is active. This
+is a report for that setup, rather than a stock 1.0.1 compatibility claim.
 
 ATLauncher needs a **rooted** TV with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) (elevated)
 and LG's `qml-runner` (present on webOS 25; other versions are untested). Reports for other models are welcome.
