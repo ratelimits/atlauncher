@@ -163,6 +163,20 @@ echo YOUR_API_KEY | ssh root@TV_IP 'mkdir -p /var/lib/atlauncher && cat > /var/l
 Reopen ATLauncher. Without a key, each app's splash is shown. You can also turn it off in **Settings → Top Shelf**.
 While a show is open full-screen, a small credit reads "Uses the TMDB API · not endorsed or certified by TMDB".
 
+### Region, language and clock settings
+
+**Settings → Top Shelf** selects the streaming region and suggestion language.
+Automatic follows the TV service country and menu language; manual overrides are
+also available. TV values are refreshed every minute. Locale changes invalidate
+incompatible cached suggestions and discard requests from the previous locale.
+
+**Settings → Appearance** selects automatic, 24-hour or 12-hour clock display and
+shows or hides the avatar beside it. Automatic follows the TV clock format; these
+controls do not change the TV's time, time zone or other system settings. Previously
+saved manual 12/24-hour choices are retained until automatic is selected explicitly.
+
+Regression checks: `node tests/clock.cjs` and `node tests/locale.cjs`.
+
 ## App Store icons
 
 With **Settings → Appearance → App Store Icons** on (the default), the TV looks each app up on Apple's App Store and

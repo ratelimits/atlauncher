@@ -24,14 +24,17 @@ function getJSON(url, done) {
 }
 
 // apps: [{ id, tmdb, style }]. done(items) with items: appId -> [{ name, overview, backdrop, card, logo }], or null.
-function refresh(key, apps, done) {
+function refresh(key, apps, done, options) {
+    options = options || { region: 'DE', language: 'de-DE' };
+    var region = encodeURIComponent(options.region), language = encodeURIComponent(options.language);
+    var logoLanguage = options.language.split('-')[0];
     var since = new Date(Date.now() - 4 * 365 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     var pending = 0, fresh = {}, any = false;
     apps.forEach(function (app) {
         if (!app.tmdb) return;
         pending++;
-        getJSON(API + '/discover/tv?api_key=' + key + '&watch_region=US&with_watch_providers=' + app.tmdb +
-            '&sort_by=popularity.desc&first_air_date.gte=' + since + '&vote_count.gte=40&with_original_language=en&include_adult=false',
+        getJSON(API + '/discover/tv?api_key=' + key + '&watch_region=' + region + '&language=' + language + '&with_watch_providers=' + app.tmdb +
+            '&sort_by=popularity.desc&first_air_date.gte=' + since + '&vote_count.gte=40&include_adult=false',
             function (data) {
                 var shows = ((data && data.results) || []).filter(function (s) { return s.backdrop_path; }).slice(0, ITEMS);
                 var items = shows.map(function (s) {
@@ -41,8 +44,11 @@ function refresh(key, apps, done) {
                 var logosLeft = app.style === 'carousel' ? shows.length : 0;
                 if (!logosLeft) return finish();
                 shows.forEach(function (s, i) {
-                    getJSON(API + '/tv/' + s.id + '/images?api_key=' + key + '&include_image_language=en,null', function (img) {
-                        var logo = img && img.logos && img.logos.filter(function (l) { return l.iso_639_1 === 'en' || !l.iso_639_1; })[0];
+                    getJSON(API + '/tv/' + s.id + '/images?api_key=' + key + '&include_image_language=' + encodeURIComponent(logoLanguage + ',en,null'), function (img) {
+                        var logos = (img && img.logos) || [];
+                        var logo = logos.filter(function (l) { return l.iso_639_1 === logoLanguage; })[0] ||
+                            logos.filter(function (l) { return l.iso_639_1 === 'en'; })[0] ||
+                            logos.filter(function (l) { return !l.iso_639_1; })[0];
                         if (logo) items[i].logo = pngLogo(IMG + 'original' + logo.file_path);
                         if (--logosLeft === 0) finish();
                     });

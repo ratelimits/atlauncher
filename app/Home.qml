@@ -4,6 +4,7 @@ import QtQuick.Window 2.12
 import "Catalog.js" as Cat
 import "Store.js" as Store
 import "Tmdb.js" as Tmdb
+import "Locale.js" as Locale
 
 /* ATLauncher: a Home Screen for LG webOS TVs, inspired by Apple TV, native QtQuick (drawn on the GPU). Runs inside
    main.qml (the TV's WebOSWindow and luna calls) or preview.qml (a desktop window with stubs).
@@ -91,6 +92,57 @@ Item {
 
     function row(i) { return Math.floor(i / cols); }
 
+    property string tvRegion: 'DE'
+    property string tvLanguage: 'de-DE'
+    property string tvTimeFormat: 'HH24'
+    property string tmdbContext: ''
+    property int tmdbRequest: 0
+    readonly property var regions: ['auto', 'DE', 'AT', 'CH', 'US', 'GB', 'FR', 'IT', 'ES', 'NL']
+    readonly property var languages: ['auto', 'de-DE', 'en-GB', 'en-US', 'fr-FR', 'it-IT', 'es-ES', 'nl-NL']
+    function localeOptions() { return Locale.options(prefs, tvRegion, tvLanguage); }
+    function readTvLocale() {
+        if (!onTv) return;
+        call('luna://com.webos.settingsservice/getSystemSettings',
+             { category: 'option', keys: ['smartServiceCountryCode2', 'country'] }, function (r) {
+            var value = r && r.settings;
+            if (value) tvRegion = Locale.region(value.smartServiceCountryCode2 || value.country);
+            localeTimer.restart();
+        });
+        call('luna://com.webos.settingsservice/getSystemSettings', { keys: ['localeInfo'] }, function (r) {
+            var info = r && r.settings && r.settings.localeInfo;
+            if (info && info.locales && info.locales.UI) tvLanguage = Locale.language(info.locales.UI);
+            localeTimer.restart();
+        });
+        call('luna://com.webos.service.systemservice/getPreferences', { keys: ['timeFormat'] }, function (r) {
+            if (r && (r.timeFormat === 'HH12' || r.timeFormat === 'HH24')) tvTimeFormat = r.timeFormat;
+            clock.update();
+            if (settings.open) refreshSettings();
+        });
+    }
+    function applyLocale() {
+        var context = Locale.context(localeOptions());
+        if (context !== tmdbContext) {
+            tmdbContext = context;
+            tmdbRequest++; // Discard replies still in flight for the previous locale.
+            tmdbItems = {};
+            tmdbAsked = false;
+            cacheFresh = loadCache();
+            rev++;
+            render(true);
+            armReveal();
+        }
+        if (settings.open) refreshSettings();
+    }
+    Timer { id: localeTimer; interval: 250; onTriggered: home.applyLocale() }
+    Timer { interval: 60000; running: home.onTv; repeat: true; onTriggered: home.readTvLocale() }
+
+    function formatClock(date) {
+        var hours = date.getHours(), minutes = date.getMinutes();
+        var time = (Locale.use12Hour(prefs, tvTimeFormat) ? (hours % 12 || 12) : (hours < 10 ? '0' : '') + hours) +
+            ':' + (minutes < 10 ? '0' : '') + minutes;
+        return time + (Locale.use12Hour(prefs, tvTimeFormat) ? (hours < 12 ? ' AM' : ' PM') : '');
+    }
+
     // ---- webOS ----
     function call(uri, payload, done) {
         if (luna) luna.call(uri, payload || {}, done || function () {});
@@ -154,7 +206,8 @@ Item {
     }
     function loadCache() {
         var cache = Store.get('tmdb', null);
-        if (cache && cache.items) {
+        if (!cache || cache.context !== Locale.context(localeOptions())) return false;
+        if (cache.items) {
             Object.keys(cache.items).forEach(function (id) {
                 cache.items[id].forEach(function (it) { if (it.logo) it.logo = Tmdb.pngLogo(it.logo); });
             });
@@ -164,13 +217,14 @@ Item {
     }
     function refreshTmdb() {
         if (!tmdbKey) return;
+        var options = localeOptions(), context = Locale.context(options), request = ++tmdbRequest;
         Tmdb.refresh(tmdbKey, Cat.KNOWN, function (fresh) {
-            if (!fresh) return;
+            if (!fresh || request !== tmdbRequest || context !== Locale.context(localeOptions())) return;
             tmdbItems = fresh;
-            Store.set('tmdb', { ts: Date.now(), items: fresh });
+            Store.set('tmdb', { ts: Date.now(), context: context, items: fresh });
             rev++;
             render(true);
-        });
+        }, options);
     }
 
     function tmdbStyle(i) {
@@ -432,7 +486,7 @@ Item {
     }
 
     // ---- Settings ----
-    function setPref(name, value) { var p = prefs; p[name] = value; prefs = p; Store.set('prefs', p); }
+    function setPref(name, value) { var p = {}; for (var key in prefs) p[key] = prefs[key]; p[name] = value; prefs = p; Store.set('prefs', p); }
     function onOff(on) { return on ? 'On' : 'Off'; }
 
     function pageFor(id) {
@@ -469,12 +523,24 @@ Item {
         }
         if (id.indexOf('app:') === 0) return appPage(id.slice(4));
         if (id === 'shelf') return { title: 'Top Shelf', rows: [
+            { label: 'Streaming Region', value: !prefs.tmdbRegion || prefs.tmdbRegion === 'auto' ? 'Automatic from TV (' + tvRegion + ')' : prefs.tmdbRegion, glyph: 'shelf',
+              note: 'Region for streaming availability. Automatic follows the TV service country; press OK to cycle.',
+              act: function () { setPref('tmdbRegion', Locale.next(regions, prefs.tmdbRegion || 'auto')); applyLocale(); } },
+            { label: 'Suggestion Language', value: !prefs.tmdbLanguage || prefs.tmdbLanguage === 'auto' ? 'Automatic from TV (' + tvLanguage + ')' : prefs.tmdbLanguage, glyph: 'shelf',
+              note: 'Language for titles and descriptions. Automatic follows the TV menu language; press OK to cycle.',
+              act: function () { setPref('tmdbLanguage', Locale.next(languages, prefs.tmdbLanguage || 'auto')); applyLocale(); } },
             { label: 'Movies and Shows', value: tmdbKey ? onOff(!prefs.tmdbOff) : 'No API key', glyph: 'shelf',
               note: tmdbKey ? 'Each app shows its own splash first; after 5 seconds on Netflix, Prime Video, Disney+, Hulu or Apple TV, its popular shows from TMDB. Off keeps the splashes. ' + tmdbNotice
                             : 'Popular shows need your own free TMDB API key in ' + Cat.DATA_DIR + '/tmdb.key (see the README). Until then each app shows its own splash.',
               act: function () { setPref('tmdbOff', !prefs.tmdbOff); if (prefs.tmdbOff) render(true); else armReveal(); refreshSettings(); } }
         ] };
         if (id === 'look') return { title: 'Appearance', rows: [
+            { label: 'Clock Format', value: Locale.clockMode(prefs) === 'auto' ? 'Automatic from TV (' + (tvTimeFormat === 'HH12' ? '12' : '24') + ' hours)' : Locale.clockMode(prefs) + ' hours', glyph: 'look',
+              note: 'Time and time zone come from the TV. Press OK to cycle between automatic, 24 and 12 hours.',
+              act: function () { setPref('clockMode', Locale.next(['auto', '24', '12'], Locale.clockMode(prefs))); clock.update(); refreshSettings(); } },
+            { label: 'Avatar', value: onOff(prefs.showAvatar !== false), glyph: 'user',
+              note: 'Show or hide the avatar next to the clock.',
+              act: function () { setPref('showAvatar', prefs.showAvatar === false); refreshSettings(); } },
             { label: 'Liquid Glass Dock', value: onOff(liquidGlass), glyph: 'look',
               note: 'The Dock is a slab of glass: its rounded edge bends the picture behind it and catches the light. Off keeps a plain clear edge.',
               act: function () { liquidGlass = !liquidGlass; setPref('liquidGlass', liquidGlass); refreshSettings(); } },
@@ -845,7 +911,7 @@ Item {
             id: status
             x: 1920 - 50 - width
             y: 50
-            width: statusRow.width + 33
+            width: statusRow.width + 48
             height: 60
             opacity: home.grid || home.carouselFull ? 0 : 1
             visible: opacity > 0
@@ -863,7 +929,7 @@ Item {
             }
             Row {
                 id: statusRow
-                x: 24
+                anchors.horizontalCenter: parent.horizontalCenter
                 height: parent.height
                 spacing: 14
                 Text {
@@ -872,13 +938,13 @@ Item {
                     font.family: Style.font; font.weight: Font.Medium; font.pixelSize: 25
                     color: 'white'
                     function update() {
-                        var d = new Date(), h = d.getHours() % 12 || 12, m = d.getMinutes();
-                        text = h + ':' + (m < 10 ? '0' : '') + m + (d.getHours() < 12 ? ' AM' : ' PM');
+                        text = home.formatClock(new Date());
                     }
                     Component.onCompleted: update()
                     Timer { interval: 15000; repeat: true; running: true; onTriggered: clock.update() }
                 }
                 Rectangle {
+                    visible: home.prefs.showAvatar !== false
                     width: 42; height: 42; radius: 21
                     anchors.verticalCenter: parent.verticalCenter
                     antialiasing: true
@@ -1250,7 +1316,9 @@ Item {
         prefs = Store.get('prefs', {}) || {};
         liquidGlass = prefs.liquidGlass !== false;
         iconSizeIndex = sizeIndex(prefs.iconSizeName);
+        tmdbContext = Locale.context(localeOptions());
         cacheFresh = loadCache();
+        readTvLocale();
         updateApps();
         readApps();
         importArrangement();
