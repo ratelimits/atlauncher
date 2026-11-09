@@ -58,6 +58,7 @@ Item {
     property int card: 0
     property int pill: 0
     property bool appView: false
+    property bool visualEdit: false
     property bool editing: false
     property string style: 'none'       // none | carousel | row | app (what the Top Shelf shows now)
     property var tmdbItems: ({})
@@ -400,6 +401,29 @@ Item {
     Timer { interval: 10000; repeat: true; running: home.onTv; onTriggered: home.readApps() }
 
     // ---- Edit mode (hold OK on an icon) ----
+    function startVisualEdit() {
+        if (editing) finishEditing();
+        closeSettings(true);
+        visualEdit = true;
+        pressTimer.stop(); holdTimer.stop(); pressTarget = '';
+        setMode('grid');
+        render();
+    }
+    function chooseEditApp(index) {
+        if (!Cat.movable(apps[index])) return;
+        selected = index;
+        startEditing();
+    }
+    function placeEditApp(index) {
+        if (!Cat.movable(apps[index])) return;
+        var list = apps.slice();
+        list.splice(index, 0, list.splice(selected, 1)[0]);
+        apps = list;
+        appModel.move(selected, index, 1);
+        selected = index;
+        finishEditing();
+        render();
+    }
     function startEditing() {
         if (!Cat.movable(apps[selected])) { bumpTile(selected, 'up'); return; }
         editing = true;
@@ -452,14 +476,9 @@ Item {
             { label: 'About', value: 'ATLauncher' + (version ? ' ' + version : ''), glyph: 'info', note: 'A Home Screen for this Mac. ' + tmdbNotice }
         ]) };
         if (id === 'apps') {
-            var rows = [{ label: 'Rearrange Apps', glyph: 'move', note: 'Move apps with the arrows, then press OK. You can also hold OK on any app on the Home Screen.',
-                act: function () {
-                    closeSettings(true);
-                    var first = apps.map(Cat.movable).indexOf(true);
-                    if (first < 0) return;
-                    openAt(first);
-                    startEditing();
-                } }];
+            var rows = [{ label: 'Edit Apps', glyph: 'move',
+                note: 'Choose an app, press OK, move with the arrows, then press OK to place it. Back exits editing.',
+                act: function () { startVisualEdit(); } }];
             candidates.forEach(function (app) {
                 rows.push({ label: app.name, value: isHidden(app.id) ? 'Hidden' : 'Shown', page: 'app:' + app.id,
                     image: app.tile || app.icon || '', generic: !app.tile, color: app.color,
@@ -675,6 +694,30 @@ Item {
     function keyDown(key, repeat) {
         var back = isBack(key), handled = true;
         pointerLive = false;
+        if (!settings.open && !appMenu.shown && visualEdit) {
+            if (isOk(key)) {
+                if (repeat || okSuppress) return true;
+                okSuppress = true;
+                if (editing) finishEditing();
+                else chooseEditApp(selected);
+                return true;
+            }
+            if (back) {
+                if (editing) finishEditing();
+                visualEdit = false;
+                render();
+                return true;
+            }
+            if (repeat && Date.now() - lastMove < repeatMs) return true;
+            if (editing) editKey(key, false);
+            else if (key === Qt.Key_Up && row(selected) === 0) bumpTile(selected, 'up');
+            else if (key === Qt.Key_Left) move(-1, 0);
+            else if (key === Qt.Key_Right) move(1, 0);
+            else if (key === Qt.Key_Up) move(0, -1);
+            else if (key === Qt.Key_Down) move(0, 1);
+            lastMove = Date.now();
+            return true;
+        }
         if (isOk(key)) {
             if (okGap.running) { okGap.stop(); return true; }      // a repeat pair: still held
             if (okSuppress || repeat || okDown) return true;
@@ -755,7 +798,7 @@ Item {
             });
         } else if (row.id === 'edit') {
             closeMenu();
-            startEditing();
+            startVisualEdit();
         } else if (row.id === 'delete') {
             showMenu('confirm', 'Delete “' + app.name + '”? Its data on this TV is deleted too.',
                      [{ id: 'confirm', label: 'Delete', glyph: 'delete', red: true }, { id: 'cancel', label: 'Cancel', glyph: 'quit' }]);
@@ -1122,7 +1165,8 @@ Item {
                     }
                     onClicked: {
                         if (home.settingsOpenNow()) return;
-                        if (home.editing) { home.finishEditing(); return; }
+                        if (home.editing) { home.placeEditApp(index); return; }
+                        if (home.visualEdit) { home.chooseEditApp(index); return; }
                         home.focusTile(index);
                         home.press();
                     }
@@ -1133,10 +1177,10 @@ Item {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             y: 16
-            text: 'Move the app, then press OK'
+            text: home.editing ? 'Move with the arrows · OK to place' : 'Choose an app · OK to move · Back to finish'
             font.family: Style.font; font.weight: Font.Medium; font.pixelSize: 24
             color: Qt.rgba(1, 1, 1, 0.8)
-            opacity: home.editing ? 1 : 0
+            opacity: home.visualEdit || home.editing ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 250 } }
         }
@@ -1154,6 +1198,7 @@ Item {
             at = Date.now();
             var down = wheel.angleDelta.y < 0;
             if (settings.open) { home.settingsKey(down ? Qt.Key_Down : Qt.Key_Up, false); return; }
+            if (home.visualEdit) { home.move(0, down ? 1 : -1); return; }
             if (home.mode === 'shelf') { if (down) home.shelfKey(Qt.Key_Down, false); return; }
             home.gridKey(down ? Qt.Key_Down : Qt.Key_Up);
         }

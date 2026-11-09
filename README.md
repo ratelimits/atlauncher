@@ -190,6 +190,15 @@ Your own pictures on the TV, named by app id, are used before anything else:
 
 App ids are listed in `/var/lib/atlauncher/apps.json`. Changes appear within about five minutes, or after a restart.
 
+## Arranging apps on screen
+
+Open **Settings → Apps → Edit Apps**. Select an app and press OK, move it with the
+arrows, then press OK to place it. Select another app to continue; Back saves and
+exits editing. With the pointer, click an app to pick it up and another position
+to place it. The app menu's Edit Home Screen opens the same selection mode.
+
+Regression check: `node tests/settings-edit.cjs`.
+
 ## Moving your arrangement
 
 To bring an app order over from another launcher, put `/var/lib/atlauncher/import.json` on the TV, then reopen
