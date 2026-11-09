@@ -94,6 +94,7 @@ Item {
     // ---- webOS ----
     function call(uri, payload, done) {
         if (luna) luna.call(uri, payload || {}, done || function () {});
+        else toast('webOS connection unavailable. Please reopen ATLauncher.');
     }
 
     function toast(message) {

@@ -237,6 +237,11 @@ git and never packaged).
 
 ## Development
 
+### App launch regression checks
+
+Run `node tests/service-errors.cjs` and `node tests/app-launch.cjs` for the service
+adapter error paths, callback completion and Home's launch dispatch.
+
 The desktop preview needs Qt 5 (`brew install qt@5`):
 
 ```sh
