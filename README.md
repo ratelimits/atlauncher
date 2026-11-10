@@ -108,6 +108,18 @@ The command keeps reporting progress after the install: once its output says `in
 Open **ATLauncher** from the app list to try it as a normal app. To update later, install the new IPK the same way,
 then run `sh /var/lib/atlauncher/atlauncher.sh relink` if ATLauncher is your Home app.
 
+### QML application registration repair
+
+If a developer installation reports `webOS service registration failed (token 0)`,
+the installer may have created only a legacy executable role for `main.qml`. Copy
+`scripts/setup-qml-permissions.py` to the TV and run it as root with Python 3.
+It preserves the existing manifest and permissions, adds an application-ID role
+with public API access, and reloads this app's manifest. Backups are saved under
+`/var/lib/atlauncher/backups/`; a failed update restores the original files. Reopen
+ATLauncher afterwards. An app update can replace the manifest, requiring the repair again.
+
+Regression check: `python3 tests/qml-permissions.py`.
+
 ## Replacing LG Home
 
 > [!WARNING]
