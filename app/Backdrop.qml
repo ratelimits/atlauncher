@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* The Top Shelf backdrop: two SceneLayers. show(scene) loads the scene into the hidden one and, once its art is
    decoded, dissolves it in over the current one (550 ms) — so a scene is never shown half-loaded. Glass reads

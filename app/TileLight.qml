@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 // RoundedImage's tvOS lighting on its own (premultiplied white), for tiles drawn some other way (an app's own icon
 // on its brand colour). Same light: above, slightly left; `lit` 0..1 is focus.

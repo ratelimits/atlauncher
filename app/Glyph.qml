@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 /* An icon: its SF Symbol from the SF Pro font you installed (Style.symbol), else the bundled Lucide picture

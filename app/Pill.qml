@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 // A tvOS button: translucent at rest; focused, white with dark text, scaled 1.08 on a soft shadow.

@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 // A show's title: its TMDB logo (fitted, bottom-left), or its name in large type until/unless there is one.

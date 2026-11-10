@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 /* The app menu (hold OK on an app), as on tvOS 26: a frosted glass panel beside the icon, one row per action with

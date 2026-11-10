@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 /* Settings (tvOS layout, as on the Chromecast and the web version): the focused row's picture and note on the left,

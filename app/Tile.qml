@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 /* An app icon: depth, never outlines. Focus lifts and scales it 1.2 with a spring, tilts it toward the move (kick),

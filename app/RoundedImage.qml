@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* An image with rounded corners and tvOS icon lighting, in one shader pass (no clip masks). Light comes from above,
    a little to the left: the rim catches it most along the top edge and down the left side, fading towards the right

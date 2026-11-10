@@ -1,5 +1,5 @@
-import QtQuick 2.12
-import QtQuick.Window 2.12
+import QtQuick 2.9
+import QtQuick.Window 2.3
 
 /* Desktop preview (qmlscene preview.qml): Home in a window scaled to fit, luna calls logged instead of sent.
    Scripted runs for checking layouts: QML_PREVIEW_STEPS="keys:Right,Right wait:800 shot:/path.png ..." —

@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 
 /* What qml-runner hands this app: its `appId` and launch `params`, set on the root context. Read from this file
    because main.qml's WebOSWindow has its own appId property, which would hide the runner's inside main.qml. */

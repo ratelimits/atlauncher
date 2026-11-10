@@ -1,4 +1,4 @@
-import QtQuick 2.12
+import QtQuick 2.9
 import "."
 
 // A show in the sectioned "Top Shows" shelf: 840x472 art, its name under it; focus lifts it 4px and scales 1.06.
