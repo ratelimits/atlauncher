@@ -1020,6 +1020,21 @@ Item {
             Behavior on opacity { NumberAnimation { duration: 300 } }
             TitleMark { anchors.fill: parent; scene: home.shownScene; maxW: 620; maxH: 220 }
         }
+        // The shelf app's TMDB logos, fetched ahead (TitleMark's decode width and fill mode: the image cache keys on both): each
+        // show's title is ready when the carousel flips to it, instead of its name showing until the logo downloads.
+        Repeater {
+            model: home.tmdbStyle(home.shelfApp) === 'carousel' ? home.itemsOf(home.shelfApp).map(function (it) { return it.logo || ''; }) : []
+            Image { visible: false; asynchronous: true; source: modelData; sourceSize.width: 700; fillMode: Image.PreserveAspectFit }
+        }
+        // The carousel's previous and next backdrops, decoded ahead (as SceneLayer decodes them), so a flip starts its
+        // dissolve at once.
+        Repeater {
+            model: {
+                var items = home.styleOf(home.shelfApp) === 'carousel' ? home.itemsOf(home.shelfApp) : [], n = items.length;
+                return n > 1 ? [items[(home.page + 1) % n].backdrop, items[(home.page + n - 1) % n].backdrop] : [];
+            }
+            Image { visible: false; asynchronous: true; source: modelData; sourceSize: backdrop.artSize; fillMode: Image.PreserveAspectCrop }
+        }
         // The chevron rides with the Dock (it sits just above it), and leaves quickly: fixed in place during a slow fade
         // it hung over the grid as the Dock slid up past it.
         Glyph {

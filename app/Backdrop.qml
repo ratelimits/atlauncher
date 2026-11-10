@@ -1,7 +1,9 @@
 import QtQuick 2.9
 
 /* The Top Shelf backdrop: two SceneLayers. show(scene) loads the scene into the hidden one and, once its art is
-   decoded, dissolves it in over the current one (550 ms) — so a scene is never shown half-loaded. Glass reads
+   decoded, dissolves it in over the current one (550 ms) — so a scene is never shown half-loaded. A scene asked for
+   during a dissolve waits for it to finish (only the latest one is kept), so fast flipping never cuts a dissolve
+   short or piles up loads. Glass reads
    the same two layers (back/front textures and `mix`) so the Dock always matches what is behind it. */
 Item {
     id: root
@@ -19,13 +21,15 @@ Item {
     readonly property real mix: front.opacity
     property var shownScene: null
     property var pending: null
+    property var queued: null
 
     signal shown(var scene)
 
     function show(scene) {
         if (shownScene && shownScene.key === scene.key && !pending) return;
         if (pending && pending.key === scene.key) return;
-        if (fade.running) fade.complete();
+        if (fade.running) { queued = shownScene && shownScene.key === scene.key ? null : scene; return; }
+        queued = null;
         pending = scene;
         var target = back;
         target.visible = true;
@@ -66,7 +70,10 @@ Item {
         from: 0
         to: 1
         duration: root.dissolveMs
-        onStopped: root.back.visible = false   // fully covered: stop drawing it
+        onStopped: {
+            root.back.visible = false   // fully covered: stop drawing it
+            if (root.queued) { var next = root.queued; root.queued = null; root.show(next); }
+        }
     }
 
     SceneLayer { id: l0; frostLevel: root.frostLevel; covered: root.covered; artSize: root.artSize }
