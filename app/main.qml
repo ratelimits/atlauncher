@@ -45,21 +45,34 @@ WebOSWindow {
         id: service
         appId: win.appId
         property var pending: ({})
-        onResponse: {
+        function finish(token, result) {
             var cb = pending[token];
             if (!cb) return;
             delete pending[token];
+            cb(result);
+        }
+        onResponse: {
             var r = null;
             try { r = JSON.parse(payload); } catch (e) {}
-            cb(r);
+            finish(token, r);
         }
+        onError: finish(token, { returnValue: false, errorCode: errorCode, errorText: errorText })
     }
     QtObject {
-        id: luna
+        id: lunaClient
         function call(uri, payload, done) {
             var m = /^(luna:\/\/[^\/]+)(\/.*)$/.exec(uri);
             if (!m) return;
-            var token = service.call(m[1], m[2], JSON.stringify(payload || {}));
+            var token;
+            try { token = service.call(m[1], m[2], JSON.stringify(payload || {})); }
+            catch (e) {
+                if (done) done({ returnValue: false, errorText: String(e) });
+                return;
+            }
+            if (!token) {
+                if (done) done({ returnValue: false, errorText: 'webOS service registration failed (token 0)' });
+                return;
+            }
             if (done) service.pending[token] = done;
         }
     }
@@ -116,7 +129,7 @@ WebOSWindow {
 
     Home {
         id: home
-        luna: luna
+        luna: lunaClient
         appId: win.appId
         launchParams: win.parsed(win.launchParams)
         version: '1.0.1'
