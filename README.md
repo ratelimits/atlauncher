@@ -75,11 +75,9 @@ and `/var/lib/atlauncher/boot.log`. For icon problems, include `/var/lib/atlaunc
 > [!NOTE]
 > `??` is the screen size. The UR8000 shipped with webOS 23 and runs webOS 25 after LG's webOS Re:New update.
 
-The [LG B4 report](https://github.com/ratelimits/atlauncher/issues/11) uses firmware `33.31.75` and ATLauncher 1.0.1 with the proposed
-[app-launch](https://github.com/ratelimits/atlauncher/pull/6), [QML-registration](https://github.com/ratelimits/atlauncher/pull/9),
-[visual-arrangement](https://github.com/ratelimits/atlauncher/pull/7) and [locale/clock](https://github.com/ratelimits/atlauncher/pull/8) fixes. Its owner
-confirmed app launching and visual app arrangement; Home takeover is active. This
-is a report for that setup, rather than a stock 1.0.1 compatibility claim.
+The [LG B4 report](https://github.com/ratelimits/atlauncher/issues/11) (firmware `33.31.75`) needed the
+[app-launch](https://github.com/ratelimits/atlauncher/pull/6) and [QML-registration](https://github.com/ratelimits/atlauncher/pull/9)
+fixes, which are in 1.0.3; on a TV like it, run the QML registration repair below if apps don't open.
 
 ATLauncher needs a **rooted** TV with [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) (elevated)
 and LG's `qml-runner` (present on webOS 25; other versions are untested). Reports for other models are welcome.
@@ -100,7 +98,7 @@ Download `com.ratelimits.atlauncher_<version>_all.ipk` from the
 [latest release](https://github.com/ratelimits/atlauncher/releases/latest). On your computer, replace `TV_IP`:
 
 ```sh
-scp -O com.ratelimits.atlauncher_1.0.1_all.ipk root@TV_IP:/tmp/atlauncher.ipk
+scp -O com.ratelimits.atlauncher_1.0.3_all.ipk root@TV_IP:/tmp/atlauncher.ipk
 ssh root@TV_IP
 ```
 

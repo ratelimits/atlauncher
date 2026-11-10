@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.3
+
+- Top Shelf: each show's TMDB logo appears with its picture instead of its name in large type first, and flipping
+  quickly through the carousel no longer cuts dissolves short or lags (logos and neighbouring backdrops load ahead).
+- Settings → Apps → Edit Apps: pick up, move and place several apps in a row (#7, thanks @gamma).
+- Settings → Top Shelf: streaming region and suggestion language, automatic from the TV or chosen by hand; Settings →
+  Appearance: 12/24-hour clock and a switch for the avatar (#8, thanks @gamma).
+- Failed webOS calls are reported instead of silently doing nothing (#6), and `scripts/setup-qml-permissions.py`
+  repairs a missing QML app registration on some developer installs (#9, thanks @gamma).
+- `scripts/setup-standalone.sh` starts the app list and icon helpers without replacing LG Home (#10, thanks @gamma).
+- Loads on Qt 5.9 (webOS 5) as well (#5, thanks @calozpom).
+- The LG B4 (webOS 25, 10.3.2) is on the compatibility list (#12).
+
 ## 1.0.1
 
 - Fix: Liquid Glass (the Dock, app menu and clock pill) did not draw on the LG C5 (webOS 25, 10.3.1): the glass

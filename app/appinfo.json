@@ -1,6 +1,6 @@
 {
   "id": "com.ratelimits.atlauncher",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "vendor": "ratelimits",
   "type": "qml",
   "main": "main.qml",
