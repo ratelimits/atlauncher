@@ -3,11 +3,11 @@
 function region(value) {
     var text = String(value || '').toUpperCase();
     var legacy = { DEU: 'DE', AUT: 'AT', CHE: 'CH', USA: 'US', GBR: 'GB', FRA: 'FR', ITA: 'IT', ESP: 'ES', NLD: 'NL' };
-    return /^[A-Z]{2}$/.test(text) ? text : (legacy[text] || 'DE');
+    return /^[A-Z]{2}$/.test(text) ? text : (legacy[text] || 'US');
 }
 function language(value) {
     var text = String(value || '').replace(/_/g, '-');
-    if (!/^[a-z]{2,3}(-[A-Za-z]{2})?$/.test(text)) return 'de-DE';
+    if (!/^[a-z]{2,3}(-[A-Za-z]{2})?$/.test(text)) return 'en-US';
     var parts = text.split('-');
     return parts[0] + (parts[1] ? '-' + parts[1].toUpperCase() : '');
 }

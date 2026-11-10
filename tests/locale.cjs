@@ -5,7 +5,7 @@ assert.equal(locale.options({},'DE','de-DE').region,'DE');
 assert.equal(locale.options({tmdbRegion:'US',tmdbLanguage:'en-US'},'DE','de-DE').language,'en-US');
 assert.equal(locale.options({tmdbRegion:'auto',tmdbLanguage:'auto'},'AUT','fr_FR').region,'AT');
 assert.equal(locale.language('fr_FR'),'fr-FR');assert.equal(locale.region('CHE'),'CH');
-assert.equal(locale.region('garbage'),'DE');assert.equal(locale.language('bad value'),'de-DE');
+assert.equal(locale.region('garbage'),'US');assert.equal(locale.language('bad value'),'en-US');
 assert(locale.use12Hour({},'HH12'));assert(!locale.use12Hour({},'HH24'));
 assert(!locale.use12Hour({clockMode:'24'},'HH12'));assert(locale.use12Hour({clockMode:'12'},'HH24'));
 assert(!locale.use12Hour({clock12h:false},'HH12'));assert(locale.use12Hour({clockMode:'auto',clock12h:false},'HH12'));

@@ -93,9 +93,9 @@ Item {
 
     function row(i) { return Math.floor(i / cols); }
 
-    property string tvRegion: 'DE'
-    property string tvLanguage: 'de-DE'
-    property string tvTimeFormat: 'HH24'
+    property string tvRegion: 'US'
+    property string tvLanguage: 'en-US'
+    property string tvTimeFormat: 'HH12'
     property string tmdbContext: ''
     property int tmdbRequest: 0
     readonly property var regions: ['auto', 'DE', 'AT', 'CH', 'US', 'GB', 'FR', 'IT', 'ES', 'NL']
@@ -715,6 +715,7 @@ Item {
         var wasAway = away;
         away = false;
         if (editing) { editing = false; saveOrder(); }
+        visualEdit = false;
         if (p.activateType === 'settings') { if (!settings.open) openSettings(); return; }
         if (settings.open) closeSettings(true);
         var f = launchFocus(p);
@@ -763,6 +764,7 @@ Item {
         pointerLive = false;
         if (!settings.open && !appMenu.shown && visualEdit) {
             if (isOk(key)) {
+                if (okGap.running) { okGap.stop(); return true; }  // a repeat pair: still held
                 if (repeat || okSuppress) return true;
                 okSuppress = true;
                 if (editing) finishEditing();
@@ -865,7 +867,7 @@ Item {
             });
         } else if (row.id === 'edit') {
             closeMenu();
-            startVisualEdit();
+            startEditing();
         } else if (row.id === 'delete') {
             showMenu('confirm', 'Delete “' + app.name + '”? Its data on this TV is deleted too.',
                      [{ id: 'confirm', label: 'Delete', glyph: 'delete', red: true }, { id: 'cancel', label: 'Cancel', glyph: 'quit' }]);

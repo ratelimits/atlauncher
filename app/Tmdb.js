@@ -25,7 +25,7 @@ function getJSON(url, done) {
 
 // apps: [{ id, tmdb, style }]. done(items) with items: appId -> [{ name, overview, backdrop, card, logo }], or null.
 function refresh(key, apps, done, options) {
-    options = options || { region: 'DE', language: 'de-DE' };
+    options = options || { region: 'US', language: 'en-US' };
     var region = encodeURIComponent(options.region), language = encodeURIComponent(options.language);
     var logoLanguage = options.language.split('-')[0];
     var since = new Date(Date.now() - 4 * 365 * 24 * 3600 * 1000).toISOString().slice(0, 10);

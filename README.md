@@ -236,7 +236,7 @@ App ids are listed in `/var/lib/atlauncher/apps.json`. Changes appear within abo
 Open **Settings → Apps → Edit Apps**. Select an app and press OK, move it with the
 arrows, then press OK to place it. Select another app to continue; Back saves and
 exits editing. With the pointer, click an app to pick it up and another position
-to place it. The app menu's Edit Home Screen opens the same selection mode.
+to place it. Holding OK on an app and choosing Edit Home Screen moves just that app.
 
 Regression check: `node tests/settings-edit.cjs`.
 
