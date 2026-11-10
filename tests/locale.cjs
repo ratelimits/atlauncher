@@ -1,0 +1,30 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const read=n=>fs.readFileSync(path.join(__dirname,'../app',n),'utf8').replace(/^\.pragma library\s*/,'');
+const locale={};vm.createContext(locale);vm.runInContext(read('Locale.js'),locale);
+assert.equal(locale.options({},'DE','de-DE').region,'DE');
+assert.equal(locale.options({tmdbRegion:'US',tmdbLanguage:'en-US'},'DE','de-DE').language,'en-US');
+assert.equal(locale.options({tmdbRegion:'auto',tmdbLanguage:'auto'},'AUT','fr_FR').region,'AT');
+assert.equal(locale.language('fr_FR'),'fr-FR');assert.equal(locale.region('CHE'),'CH');
+assert.equal(locale.region('garbage'),'DE');assert.equal(locale.language('bad value'),'de-DE');
+assert(locale.use12Hour({},'HH12'));assert(!locale.use12Hour({},'HH24'));
+assert(!locale.use12Hour({clockMode:'24'},'HH12'));assert(locale.use12Hour({clockMode:'12'},'HH24'));
+assert(!locale.use12Hour({clock12h:false},'HH12'));assert(locale.use12Hour({clockMode:'auto',clock12h:false},'HH12'));
+assert.notEqual(locale.context({region:'DE',language:'de-DE'}),locale.context({region:'US',language:'de-DE'}));
+const requests=[],queue=[];const c={console,XMLHttpRequest:function(){this.open=(_,url)=>{this.url=url};this.send=()=>{requests.push(this.url);queue.push(this)}}};
+c.XMLHttpRequest.DONE=4;vm.createContext(c);vm.runInContext(read('Tmdb.js'),c);
+let result;c.refresh('test-key',[{id:'netflix',tmdb:8,style:'carousel'}],r=>result=r,{region:'DE',language:'de-DE'});
+assert(requests[0].includes('watch_region=DE'));assert(requests[0].includes('language=de-DE'));assert(!requests[0].includes('with_original_language'));
+function reply(data){const r=queue.shift();r.readyState=4;r.status=200;r.responseText=JSON.stringify(data);r.onreadystatechange()}
+reply({results:[{id:1,name:'Deutscher Titel',overview:'Beschreibung',backdrop_path:'/art.jpg'}]});
+assert(requests[1].includes('de%2Cen%2Cnull'));
+reply({logos:[{iso_639_1:'en',file_path:'/english.png'},{iso_639_1:'de',file_path:'/deutsch.png'}]});
+assert.equal(result.netflix[0].name,'Deutscher Titel');assert(result.netflix[0].logo.endsWith('/deutsch.png'));
+console.log('PASS: TV defaults, manual overrides, legacy clock migration, locale-specific cache identity, German TMDB requests and logo preference');
+const home=read('Home.qml');
+function extract(name){const start=home.indexOf('function '+name+'('),open=home.indexOf('{',start);let d=1,end=open+1;for(;d;end++){if(home[end]==='{')d++;if(home[end]==='}')d--;}return home.slice(start,end)}
+const callbacks=[],cached=[];const h={Locale:locale,prefs:{},tvRegion:'DE',tvLanguage:'de-DE',tmdbKey:'test',tmdbRequest:0,tmdbItems:{},rev:0,render(){},Store:{set(k,v){cached.push(v)},get(){return {context:'US|en-US|2',items:{old:[]},ts:Date.now()}}},Tmdb:{refresh(k,a,cb,o){callbacks.push(cb)},TTL:10000},Cat:{KNOWN:[]}};
+vm.createContext(h);for(const name of ['localeOptions','refreshTmdb','loadCache'])vm.runInContext(extract(name),h);
+assert.equal(h.loadCache(),false);assert.equal(Object.keys(h.tmdbItems).length,0);
+h.refreshTmdb();h.prefs={tmdbRegion:'US'};h.refreshTmdb();callbacks[0]({netflix:['stale']});assert.equal(cached.length,0);
+callbacks[1]({netflix:['current']});assert.equal(cached.length,1);assert.equal(cached[0].context,'US|de-DE|2');
+console.log('PASS: reject old US cache and ignore late replies from previous locale');
