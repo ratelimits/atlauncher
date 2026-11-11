@@ -4,6 +4,9 @@
 
 - Fix: on some TVs (an LG C2 on webOS 26) the TV restarted into LG Home on its own shortly after ATLauncher took
   over at startup. Settings → System → Restart into LG Home now records the press, and only that restarts the TV.
+- Fix: the app list helper and the Restart into LG Home helper stopped about two minutes after each boot (systemd
+  ended them with the boot hook's unit), so new apps, App Store icon downloads and Restart into LG Home only worked
+  again after a relink. Each now runs as its own unit.
 - Startup: where LG Home was already loaded when the boot hooks ran (late hooks, or a cold start with Quick Start+
   off), the TV's app manager now rereads Home instead of being restarted, which left the picture black for a while;
   the restart is only a fallback. LG Home on screen at that point is closed straight away. With ATLauncher

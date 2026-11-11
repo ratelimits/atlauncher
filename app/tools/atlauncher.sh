@@ -163,14 +163,21 @@ media_check() {
   if [ -n "$s" ] && [ -n "$m" ] && [ "$s" -gt "$m" ]; then log "media server older than SAM: restarting it"; systemctl restart umediaserver.service; fi
 }
 
+# Each helper is its own systemd unit, so it outlives whoever started it: systemd stops everything a unit started
+# when the unit ends, and the boot hook's unit ends two minutes after boot (the helpers went with it). Without
+# systemd-run, a new session (setsid). A second copy exits at once (each helper holds a lock).
 helpers() {
-  setsid sh "$DATA/apps-watch.sh" </dev/null >/dev/null 2>&1 &
-  setsid sh "$DATA/home-redirect.sh" </dev/null >/dev/null 2>&1 &
+  for h in apps-watch home-redirect; do
+    systemctl reset-failed "atlauncher-$h" >/dev/null 2>&1
+    systemd-run --unit="atlauncher-$h" --no-block sh "$DATA/$h.sh" >/dev/null 2>&1 ||
+      (setsid sh "$DATA/$h.sh" </dev/null >/dev/null 2>&1 &)
+  done
 }
 
 # Each helper runs in its own session (setsid), so its whole process group is stopped: killing only the shell left
 # its luna-send subscription running, holding the helper's lock, and a restarted helper exited at once.
 helpers_off() {
+  systemctl stop atlauncher-apps-watch atlauncher-home-redirect >/dev/null 2>&1
   for p in /proc/[0-9]*; do
     c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
     case "$c" in "sh $DATA/apps-watch.sh"*|"sh $DATA/home-redirect.sh"*) kill -- "-${p#/proc/}" 2>/dev/null; kill "${p#/proc/}" 2>/dev/null ;; esac
