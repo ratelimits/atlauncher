@@ -187,7 +187,10 @@ helpers_off() {
 
 copy_tools() {
   mkdir -p "$DATA/custom/icons" "$DATA/custom/art" "$DATA/fonts"
-  for f in atlauncher.sh homekey.js apps-watch.sh home-redirect.sh storeicons.py; do cp "$APP/tools/$f" "$DATA/$f"; done
+  # Copied, then renamed into place: this script may be the one being replaced, and sh reads it as it runs.
+  for f in atlauncher.sh homekey.js apps-watch.sh home-redirect.sh storeicons.py; do
+    cp "$APP/tools/$f" "$DATA/$f.new" && mv -f "$DATA/$f.new" "$DATA/$f"
+  done
 }
 
 hooks_on() {
