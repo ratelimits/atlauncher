@@ -551,11 +551,11 @@ Item {
         if (id.indexOf('app:') === 0) return appPage(id.slice(4));
         if (id === 'shelf') return { title: 'Top Shelf', rows: [
             { label: 'Streaming Region', value: !prefs.tmdbRegion || prefs.tmdbRegion === 'auto' ? 'Automatic from TV (' + tvRegion + ')' : prefs.tmdbRegion, glyph: 'shelf',
-              note: 'Region for streaming availability. Automatic follows the TV service country; press OK to cycle.',
-              act: function () { setPref('tmdbRegion', Locale.next(regions, prefs.tmdbRegion || 'auto')); applyLocale(); } },
+              note: 'Region for streaming availability. Automatic follows the TV service country; press OK or \u2190 \u2192 to change.',
+              step: function (dir) { setPref('tmdbRegion', Locale.next(regions, prefs.tmdbRegion || 'auto', dir)); applyLocale(); } },
             { label: 'Suggestion Language', value: !prefs.tmdbLanguage || prefs.tmdbLanguage === 'auto' ? 'Automatic from TV (' + tvLanguage + ')' : prefs.tmdbLanguage, glyph: 'shelf',
-              note: 'Language for titles and descriptions. Automatic follows the TV menu language; press OK to cycle.',
-              act: function () { setPref('tmdbLanguage', Locale.next(languages, prefs.tmdbLanguage || 'auto')); applyLocale(); } },
+              note: 'Language for titles and descriptions. Automatic follows the TV menu language; press OK or \u2190 \u2192 to change.',
+              step: function (dir) { setPref('tmdbLanguage', Locale.next(languages, prefs.tmdbLanguage || 'auto', dir)); applyLocale(); } },
             { label: 'Movies and Shows', value: tmdbKey ? onOff(!prefs.tmdbOff) : 'No API key', glyph: 'shelf',
               note: tmdbKey ? 'Each app shows its own splash first; after 5 seconds on Netflix, Prime Video, Disney+, Hulu or Apple TV, its popular shows from TMDB. Off keeps the splashes. ' + tmdbNotice
                             : 'Popular shows need your own free TMDB API key in ' + Cat.DATA_DIR + '/tmdb.key (see the README). Until then each app shows its own splash.',
@@ -694,8 +694,13 @@ Item {
                 refreshSettings();
             }
             else if (info.act) info.act();
+            else if (info.step) info.step(1);
             else settingsView.bump('right');
-        } else if (key !== Qt.Key_Left && key !== Qt.Key_Right) return false;
+        } else if (key === Qt.Key_Left || key === Qt.Key_Right) {
+            // Rows with a list of choices (Streaming Region, Suggestion Language) also step back and forth.
+            var row = settingsView.page.rows[level.index];
+            if (row && row.step) { settingsView.pressRow(); row.step(key === Qt.Key_Left ? -1 : 1); }
+        } else return false;
         return true;
     }
 

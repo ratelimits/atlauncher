@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Settings → Top Shelf: Streaming Region and Suggestion Language also step back and forth with ← and →, now that
+  the lists are long (OK or a click still goes forward).
+
 ## 1.0.4
 
 - Fix: on some TVs (an LG C2 on webOS 26) the TV restarted into LG Home on its own shortly after ATLauncher took

@@ -31,4 +31,9 @@ function use12Hour(prefs, tvTimeFormat) {
     var mode = clockMode(prefs);
     return mode === '12' || (mode === 'auto' && tvTimeFormat === 'HH12');
 }
-function next(values, value) { return values[(values.indexOf(value) + 1) % values.length]; }
+// The value after `value` (or before it, step -1), wrapping around; an unknown value starts from the first.
+function next(values, value, step) {
+    var i = values.indexOf(value), n = values.length;
+    if (i < 0) return values[step < 0 ? n - 1 : 0];
+    return values[(i + (step < 0 ? -1 : 1) + n) % n];
+}
