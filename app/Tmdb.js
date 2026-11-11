@@ -33,7 +33,7 @@ function refresh(key, apps, done, options) {
     apps.forEach(function (app) {
         if (!app.tmdb) return;
         pending++;
-        getJSON(API + '/discover/tv?api_key=' + key + '&watch_region=' + region + '&language=' + language + '&with_watch_providers=' + app.tmdb +
+        getJSON(API + '/discover/tv?api_key=' + key + '&watch_region=' + region + '&language=' + language + '&with_watch_providers=' + encodeURIComponent(String(app.tmdb)) +
             '&sort_by=popularity.desc&first_air_date.gte=' + since + '&vote_count.gte=40&include_adult=false',
             function (data) {
                 var shows = ((data && data.results) || []).filter(function (s) { return s.backdrop_path; }).slice(0, ITEMS);

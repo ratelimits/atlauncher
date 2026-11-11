@@ -17,7 +17,8 @@ var ESCAPE_ID = 'com.webos.app.home';
 
 var KNOWN = [
     { id: 'netflix', name: 'Netflix', shelf: 'art/netflix.png', tmdb: 8, style: 'carousel' },
-    { id: 'amazon', name: 'Prime Video', shelf: 'art/amazon.png', tmdb: 9, style: 'row' },
+    // TMDB lists Prime Video as 9 in the US and 119 elsewhere: either one.
+    { id: 'amazon', name: 'Prime Video', shelf: 'art/amazon.png', tmdb: '9|119', style: 'row' },
     { id: 'com.disney.disneyplus-prod', name: 'Disney+', shelf: 'art/com.disney.disneyplus-prod.png', tmdb: 337, style: 'carousel' },
     { id: 'hulu', name: 'Hulu', shelf: 'art/hulu.png', tmdb: 15, style: 'row' },
     { id: 'com.apple.appletv', name: 'Apple TV', shelf: 'art/com.apple.appletv.png', tmdb: 350, style: 'carousel' },
@@ -49,6 +50,24 @@ var RENAMED = { 'com.webos.app.tinybrowser': 'com.webos.app.browser' };
 
 function isFixed(app) { return !!app && FIXED_IDS.indexOf(app.id) >= 0; }
 function movable(app) { return !!app && !app.gap && !isFixed(app); }
+// Streaming apps matched by their name (their webOS ids vary by country), for TMDB shows: name pattern -> provider.
+var BY_TITLE = [
+    { match: /^(jio ?hotstar|disney\+? ?hotstar|hotstar)$/i, tmdb: 2336, style: 'row' },
+    { match: /^zee ?5$/i, tmdb: 232, style: 'row' },
+    { match: /^sony ?liv$/i, tmdb: 237, style: 'row' }
+];
+function byTitle(id, title) {
+    var name = String(title || '').trim();
+    for (var i = 0; i < BY_TITLE.length; i++)
+        if (BY_TITLE[i].match.test(name)) return { id: id, tmdb: BY_TITLE[i].tmdb, style: BY_TITLE[i].style };
+    return { id: id };
+}
+// The apps TMDB shows are fetched for: the known ones, and installed ones matched by name.
+function tmdbApps(installedApps) {
+    var out = KNOWN.filter(function (a) { return a.tmdb; });
+    (installedApps || []).forEach(function (a) { if (a.tmdb && !knownApp(a.id)) out.push({ id: a.id, tmdb: a.tmdb, style: a.style }); });
+    return out;
+}
 function knownApp(id) { for (var i = 0; i < KNOWN.length; i++) if (KNOWN[i].id === id) return KNOWN[i]; return null; }
 function dataUrl(path) { return 'file://' + DATA_DIR + '/' + path; }
 
@@ -87,7 +106,7 @@ function arrange(installed, store, ownIds, opts) {
             var info = installed[id];
             if (info.systemApp || !info.visible || ownIds.indexOf(id) >= 0 || knownApp(id)) return;
             if (!store.seen[id]) store.seen[id] = 'shown';
-            pool.push(withArt({ id: id }, info, opts));
+            pool.push(withArt(byTitle(id, info.title), info, opts));
         });
     }
     pool.forEach(function (a) { byId[a.id] = a; });

@@ -59,6 +59,42 @@ end_lg_home() {
 }
 
 sam_sees_atlauncher() { L luna://com.webos.applicationManager/getAppInfo '{"id":"com.webos.app.home"}' | grep -q '"type": *"qml"'; }
+sam_answers() { L luna://com.webos.applicationManager/getAppInfo '{"id":"com.webos.app.home"}' | grep -q '"returnValue": *true'; }
+lg_home_running() {
+  for p in /proc/[0-9]*; do
+    c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
+    case "$c" in *flutter-client*com.webos.app.home*) return 0 ;; esac
+  done
+  return 1
+}
+
+# Make SAM read Home's appinfo.json again (the overlay's) without restarting it: blockSystemApp then
+# releaseBlockSystemApp for that one app (webOS 10 and later; found by Glasshouse, github.com/rorygallagher2024/glasshouse).
+# A SAM restart during boot is what left the picture black on some TVs. The release always goes out, so Home is never
+# left blocked; webOS 11 wants forceBlockSystemApp where its schema names it.
+sam_reread_home() {
+  force=
+  grep -q '"forceBlockSystemApp"' /etc/palm/schemas/sam/applicationManager.blockSystemApp.schema 2>/dev/null && force=',"forceBlockSystemApp":false'
+  L luna://com.webos.applicationManager/blockSystemApp "{\"id\":\"com.webos.app.home\"$force}" >/dev/null
+  i=0; while [ $i -lt 3 ]; do
+    L luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.home"}' | grep -q '"returnValue": *true' && break
+    i=$((i + 1)); sleep 1
+  done
+  i=0; while [ $i -lt 10 ]; do sam_sees_atlauncher && return 0; i=$((i + 1)); sleep 1; done
+  return 1
+}
+
+# Boot: put ATLauncher in front of LG Home as soon as SAM answers. Where SAM read LG Home's appinfo before the overlay
+# was mounted (Homebrew Channel's hooks run late on some TVs, or after a cold start without Quick Start+), it is made to
+# read it again; a SAM restart is the last resort. Where LG Home is already on screen, it is ended and Home reopened.
+take_home() {
+  i=0; while [ $i -lt 60 ] && ! sam_answers; do i=$((i + 1)); sleep 1; done
+  if ! sam_sees_atlauncher; then
+    if sam_reread_home; then log "SAM had LG Home's appinfo: reread"
+    else log "SAM had LG Home's appinfo, reread failed: restarting SAM"; restart_sam_and_home; return; fi
+  fi
+  if lg_home_running; then end_lg_home; sleep 1; open_home; log "LG Home was on screen: ATLauncher opened"; fi
+}
 
 open_home() {
   i=0; while [ $i -lt 10 ]; do
@@ -230,13 +266,16 @@ case "${1:-status}" in
   boot)
     # Boot hook 60 (as its own systemd unit): helpers, keys once configd answers, and Home in front.
     [ -f /tmp/atlauncher-lg-home ] && exit 0
+    installed || exit 0
+    # A block cut short (power cut between the two calls) would leave Home unable to launch: release it once.
+    L luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.home"}' >/dev/null
     helpers
+    mounted && take_home
     i=0; while [ $i -lt 90 ]; do
       L luna://com.webos.service.config/getConfigs "{\"configNames\":[\"$KEYCFG\"]}" | grep -q handleScreenSaver && break
       i=$((i + 1)); sleep 2
     done
     keys_on; log "keys on"
-    if mounted && ! sam_sees_atlauncher; then log "SAM has LG Home's appinfo: restarting SAM"; restart_sam_and_home; fi
     sleep 20; media_check
     sleep 100; media_check
     ;;

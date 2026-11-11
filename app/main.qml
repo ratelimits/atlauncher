@@ -132,7 +132,7 @@ WebOSWindow {
         luna: lunaClient
         appId: win.appId
         launchParams: win.parsed(win.launchParams)
-        version: '1.0.3'
+        version: '1.0.4'
         backKeys: [WebOS.Key_webOS_Back]
         focus: true
         Component.onCompleted: { forceActiveFocus(); win.ready = true; win.maybeBench(win.parsed(win.launchParams)); }

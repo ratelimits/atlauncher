@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.4
+
+- Fix: on some TVs (an LG C2 on webOS 26) the TV restarted into LG Home on its own shortly after ATLauncher took
+  over at startup. Settings → System → Restart into LG Home now records the press, and only that restarts the TV.
+- Startup: where LG Home was already loaded when the boot hooks ran (late hooks, or a cold start with Quick Start+
+  off), the TV's app manager now rereads Home instead of being restarted, which left the picture black for a while;
+  the restart is only a fallback. LG Home on screen at that point is closed straight away. With ATLauncher
+  uninstalled, its boot hooks no longer change anything (the remote keys stayed with it).
+- Streaming Region: about 40 countries, India among them, and the TV's 3-letter country codes are understood.
+  Suggestion Language: more languages (Hindi, English (India), Japanese, Korean, Portuguese (Brazil) and others).
+- Top Shelf shows for JioHotstar, ZEE5 and SonyLIV, and Prime Video's shows outside the US.
+- App Store Icons: apps are looked up in the TV's country's App Store first, then the US one; every icon is
+  fetched again once.
+
 ## 1.0.3
 
 - Top Shelf: each show's TMDB logo appears with its picture instead of its name in large type first, and flipping

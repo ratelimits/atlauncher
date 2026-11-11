@@ -98,7 +98,7 @@ Download `com.ratelimits.atlauncher_<version>_all.ipk` from the
 [latest release](https://github.com/ratelimits/atlauncher/releases/latest). On your computer, replace `TV_IP`:
 
 ```sh
-scp -O com.ratelimits.atlauncher_1.0.3_all.ipk root@TV_IP:/tmp/atlauncher.ipk
+scp -O com.ratelimits.atlauncher_1.0.4_all.ipk root@TV_IP:/tmp/atlauncher.ipk
 ssh root@TV_IP
 ```
 

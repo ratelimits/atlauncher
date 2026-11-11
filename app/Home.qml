@@ -98,8 +98,11 @@ Item {
     property string tvTimeFormat: 'HH12'
     property string tmdbContext: ''
     property int tmdbRequest: 0
-    readonly property var regions: ['auto', 'DE', 'AT', 'CH', 'US', 'GB', 'FR', 'IT', 'ES', 'NL']
-    readonly property var languages: ['auto', 'de-DE', 'en-GB', 'en-US', 'fr-FR', 'it-IT', 'es-ES', 'nl-NL']
+    readonly property var regions: ['auto', 'AE', 'AR', 'AT', 'AU', 'BE', 'BR', 'CA', 'CH', 'CL', 'CO', 'CZ', 'DE', 'DK',
+                                    'ES', 'FI', 'FR', 'GB', 'HU', 'ID', 'IE', 'IN', 'IT', 'JP', 'KR', 'MX', 'MY', 'NL',
+                                    'NO', 'NZ', 'PH', 'PL', 'PT', 'SA', 'SE', 'SG', 'TH', 'TR', 'US', 'ZA']
+    readonly property var languages: ['auto', 'de-DE', 'en-GB', 'en-IN', 'en-US', 'es-ES', 'es-MX', 'fr-FR', 'hi-IN',
+                                      'it-IT', 'ja-JP', 'ko-KR', 'nl-NL', 'pl-PL', 'pt-BR', 'sv-SE', 'tr-TR']
     function localeOptions() { return Locale.options(prefs, tvRegion, tvLanguage); }
     function readTvLocale() {
         if (!onTv) return;
@@ -176,7 +179,11 @@ Item {
         if (Date.now() < escapeArmed) {
             escapeArmed = 0;
             toast('Restarting into LG Home… The restart after that brings ATLauncher back.');
-            call('luna://com.webos.applicationManager/launch', { id: Cat.OWN_ID });
+            // home-redirect.sh only restarts the TV for a launch that follows this recorded press.
+            call('luna://com.webos.settingsservice/setSystemSettings',
+                 { app_id: Cat.OWN_ID, category: 'atlauncher', settings: { lgHome: String(Date.now()) } }, function () {
+                call('luna://com.webos.applicationManager/launch', { id: Cat.OWN_ID });
+            });
         } else {
             escapeArmed = Date.now() + 4000;
             toast('Press OK again to restart the TV into LG Home.');
@@ -220,7 +227,7 @@ Item {
     function refreshTmdb() {
         if (!tmdbKey) return;
         var options = localeOptions(), context = Locale.context(options), request = ++tmdbRequest;
-        Tmdb.refresh(tmdbKey, Cat.KNOWN, function (fresh) {
+        Tmdb.refresh(tmdbKey, Cat.tmdbApps(candidates), function (fresh) {
             if (!fresh || request !== tmdbRequest || context !== Locale.context(localeOptions())) return;
             tmdbItems = fresh;
             Store.set('tmdb', { ts: Date.now(), context: context, items: fresh });

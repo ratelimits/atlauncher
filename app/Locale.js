@@ -2,7 +2,12 @@
 /* Normalize the TV's locale values without changing its system settings. */
 function region(value) {
     var text = String(value || '').toUpperCase();
-    var legacy = { DEU: 'DE', AUT: 'AT', CHE: 'CH', USA: 'US', GBR: 'GB', FRA: 'FR', ITA: 'IT', ESP: 'ES', NLD: 'NL' };
+    // ISO 3-letter codes (some TVs report the country that way) for the Streaming Region choices.
+    var legacy = { ARE: 'AE', ARG: 'AR', AUS: 'AU', AUT: 'AT', BEL: 'BE', BRA: 'BR', CAN: 'CA', CHE: 'CH', CHL: 'CL',
+                   COL: 'CO', CZE: 'CZ', DEU: 'DE', DNK: 'DK', ESP: 'ES', FIN: 'FI', FRA: 'FR', GBR: 'GB', HUN: 'HU',
+                   IDN: 'ID', IND: 'IN', IRL: 'IE', ITA: 'IT', JPN: 'JP', KOR: 'KR', MEX: 'MX', MYS: 'MY', NLD: 'NL',
+                   NOR: 'NO', NZL: 'NZ', PHL: 'PH', POL: 'PL', PRT: 'PT', SAU: 'SA', SGP: 'SG', SWE: 'SE', THA: 'TH',
+                   TUR: 'TR', USA: 'US', ZAF: 'ZA' };
     return /^[A-Z]{2}$/.test(text) ? text : (legacy[text] || 'US');
 }
 function language(value) {
@@ -15,7 +20,7 @@ function options(prefs, tvRegion, tvLanguage) {
     return { region: region(prefs.tmdbRegion === 'auto' || !prefs.tmdbRegion ? tvRegion : prefs.tmdbRegion),
              language: language(prefs.tmdbLanguage === 'auto' || !prefs.tmdbLanguage ? tvLanguage : prefs.tmdbLanguage) };
 }
-function context(options) { return options.region + '|' + options.language + '|2'; }
+function context(options) { return options.region + '|' + options.language + '|3'; }
 function clockMode(prefs) {
     if (prefs.clockMode === '12' || prefs.clockMode === '24') return prefs.clockMode;
     if (prefs.clockMode === 'auto') return 'auto';

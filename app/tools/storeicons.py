@@ -8,8 +8,11 @@ Run with --refetch <webOS app id> to download one app's icon again.
 
 Which App Store app: /var/lib/atlauncher/store-ids.json first ({"<webOS app id>": <App Store id>, or null to leave
 that app's LG icon}), then a built-in list for popular apps, then a search by the app's name that only accepts a
-close match. Hits are refreshed monthly; misses are retried after a week."""
-import hashlib, json, os, re, sys, time, urllib.parse, urllib.request
+close match. Hits are refreshed monthly; misses are retried after a week.
+
+The App Store of the TV's country is asked first (some apps are only listed there, like Airtel Xstream Play in India),
+then the US one."""
+import hashlib, json, os, re, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 
 DATA = '/var/lib/atlauncher'
 OUT = os.path.join(DATA, 'storeicons')
@@ -18,16 +21,36 @@ UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/60
                     'Version/17.0 Safari/605.1.15'}
 HIT_DAYS, MISS_DAYS = 30, 7
 # Bump when the way icons are found changes: an index from an older version is discarded and every app refetched.
-INDEX_VERSION = 4
+INDEX_VERSION = 5
 
 # webOS app id -> App Store id, for apps whose LG names don't search well or have look-alikes.
 BUILTIN = {
     'netflix': 363590051, 'amazon': 545519333, 'com.disney.disneyplus-prod': 1446075923, 'hulu': 376510438,
     'com.apple.appletv': 1174078549, 'youtube.leanback.v4': 544007664, 'com.wbd.stream': 1666653815,
     'com.peacock.tv': 1508186374, 'com.apple.applemusic': 1108187390, 'com.microsoft.xbox': 736179781,
+    'com.sonyliv2.tvapp': 587794258, 'com.domain.xstreamplay': 1000556753,
 }
 # LG system apps with no App Store counterpart: never searched.
 SKIP = re.compile(r'^(com\.webos\.|com\.palm\.|com\.lge\.|airplay$|org\.webosbrew\.|com\.ratelimits\.atlauncher$)')
+
+
+def tv_country():
+    """The TV's service country as a lowercase 2-letter App Store code, or 'us'."""
+    try:
+        out = subprocess.run(['timeout', '10', 'luna-send', '-n', '1', 'luna://com.webos.settingsservice/getSystemSettings',
+                              '{"category":"option","keys":["smartServiceCountryCode2"]}'],
+                             capture_output=True, text=True, timeout=15).stdout
+        m = re.search(r'"smartServiceCountryCode2"\s*:\s*"([A-Za-z]{2})"', out)
+        return m.group(1).lower() if m else 'us'
+    except Exception:
+        return 'us'
+
+
+COUNTRY = 'us'
+
+
+def stores():
+    return [COUNTRY] + (['us'] if COUNTRY != 'us' else [])
 
 
 def get(url, binary=False):
@@ -44,11 +67,12 @@ def search(title):
     want = norm(title)
     if len(want) < 3:
         return None
-    q = urllib.parse.urlencode({'term': title, 'entity': 'software', 'country': 'us', 'limit': 8})
-    for r in json.loads(get('https://itunes.apple.com/search?' + q)).get('results', []):
-        name = norm(r.get('trackName'))
-        if name == want or name.startswith(want):
-            return r['trackId']
+    for country in stores():
+        q = urllib.parse.urlencode({'term': title, 'entity': 'software', 'country': country, 'limit': 8})
+        for r in json.loads(get('https://itunes.apple.com/search?' + q)).get('results', []):
+            name = norm(r.get('trackName'))
+            if name == want or name.startswith(want):
+                return r['trackId']
     return None
 
 
@@ -69,7 +93,16 @@ def own_tv_icon(page, store_id):
 
 def fetch(store_id, app_id):
     """Download the Apple TV tile. Returns {'tile': path}, or {} when the app has no Apple TV version."""
-    tv = own_tv_icon(get(f'https://apps.apple.com/us/app/id{store_id}?platform=tv'), store_id)
+    tv = None
+    for country in stores():
+        try:
+            tv = own_tv_icon(get(f'https://apps.apple.com/{country}/app/id{store_id}?platform=tv'), store_id)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+            continue   # not sold in this country's store
+        if tv:
+            break
     return {'tile': save(tv + '/500x300bb.png', app_id, 'tile')} if tv else {}
 
 
@@ -91,7 +124,9 @@ def save(url, app_id, kind):
 
 
 def main():
+    global COUNTRY
     os.makedirs(OUT, exist_ok=True)
+    COUNTRY = tv_country()
     try:
         apps = json.load(open(os.path.join(DATA, 'apps.json')))['apps']
     except Exception:
@@ -104,8 +139,8 @@ def main():
         index = json.load(open(INDEX))
     except Exception:
         index = {}
-    if index.get('_version') != INDEX_VERSION:
-        index = {'_version': INDEX_VERSION}
+    if index.get('_version') != INDEX_VERSION or index.get('_country', 'us') != COUNTRY:
+        index = {'_version': INDEX_VERSION, '_country': COUNTRY}
     # --refetch <app id>: download that app's icon again (Settings > Apps > <app> > App Store Icon turned back on).
     if len(sys.argv) > 2 and sys.argv[1] == '--refetch':
         index.pop(sys.argv[2], None)
