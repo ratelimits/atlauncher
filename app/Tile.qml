@@ -75,13 +75,34 @@ Item {
         onRunningChanged: if (!running) tile.jiggle = 0
     }
 
+    // tvOS 27: the focused icon glows in its average colour (Glow, from a 4x4 copy of the icon), evenly on every
+    // side, over a lighter drop shadow. Only the focused tile draws it.
+    ShaderEffectSource {
+        id: glowSrc
+        sourceItem: tile.focused || glow.opacity > 0 ? art : null
+        textureSize: Qt.size(4, 4)
+        smooth: true
+        live: true
+        hideSource: false
+        visible: false
+    }
+    Glow {
+        id: glow
+        source: glowSrc
+        shapeW: tile.width
+        shapeH: tile.height
+        strength: 0.35
+        opacity: tile.focused ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 250 } }
+    }
     Shadow {
         shapeW: tile.width
         shapeH: tile.height
         radius: 28
         blur: 40
         dy: 22
-        strength: 0.5
+        strength: 0.32
         opacity: tile.focused ? 1 : 0
         visible: opacity > 0
         Behavior on opacity { NumberAnimation { duration: 250 } }

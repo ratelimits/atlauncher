@@ -1,7 +1,7 @@
 import QtQuick 2.9
 
 // RoundedImage's tvOS lighting on its own (premultiplied white), for tiles drawn some other way (an app's own icon
-// on its brand colour). Same light: above, slightly left; `lit` 0..1 is focus.
+// on its brand colour). Same light: a thin rim all round, a little brighter on top; `lit` 0..1 is focus.
 ShaderEffect {
     property real radius: 28
     property real lit: 0
@@ -21,10 +21,10 @@ ShaderEffect {
             highp vec2 n = (q.x > 0.0 && q.y > 0.0) ? normalize(q) * sg : (q.x > q.y ? vec2(sg.x, 0.0) : vec2(0.0, sg.y));
             lowp float a = clamp(0.5 - dist, 0.0, 1.0);
             highp float d = max(0.0, -dist);
-            highp float face = max(dot(n, normalize(vec2(-0.45, -1.0))), 0.0);
-            lowp float rim = (1.0 - smoothstep(0.6, 2.4, d)) * (0.05 + 0.65 * face) * mix(0.35, 1.0, lit);
-            lowp float glow = exp(-d / 9.0) * 0.16 * face * lit;
-            lowp float gloss = (1.0 - smoothstep(0.0, px.y * 0.55, p.y)) * 0.06 * lit;
+            highp float face = max(-n.y, 0.0);   // tvOS 27: a thin rim all round, a little brighter along the top
+            lowp float rim = (1.0 - smoothstep(0.6, 2.4, d)) * (0.30 + 0.25 * face) * mix(0.35, 1.0, lit);
+            lowp float glow = 0.0;   // no light falling onto the face
+            lowp float gloss = 0.0;
             gl_FragColor = vec4(clamp(rim + glow + gloss, 0.0, 1.0)) * a * qt_Opacity;
         }
     "

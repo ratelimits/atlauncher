@@ -4,6 +4,9 @@
 
 - Settings → Top Shelf: Streaming Region and Suggestion Language also step back and forth with ← and →, now that
   the lists are long (OK or a click still goes forward).
+- The focused app glows softly in its own colour, evenly on every side, over a lighter shadow; its lighting is a thin
+  rim all the way round (a little brighter on top) instead of a light from the top left with a gloss over the upper
+  half, as on tvOS 27.
 
 ## 1.0.4
 

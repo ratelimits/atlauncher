@@ -57,10 +57,10 @@ ShaderEffect {
             lowp vec4 icon = (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) ? texture2D(tex, uv) : vec4(0.0);
             lowp vec3 col = icon.rgb + ground * (1.0 - icon.a);
 
-            highp float face = max(dot(n, normalize(vec2(-0.45, -1.0))), 0.0);
-            lowp float rim = (1.0 - smoothstep(0.6, 2.4, d)) * (0.05 + 0.65 * face) * mix(0.35, 1.0, lit);
-            lowp float glow = exp(-d / 9.0) * 0.16 * face * lit;
-            lowp float gloss = (1.0 - smoothstep(0.0, px.y * 0.55, p.y)) * 0.06 * lit;
+            highp float face = max(-n.y, 0.0);   // tvOS 27: a thin rim all round, a little brighter along the top
+            lowp float rim = (1.0 - smoothstep(0.6, 2.4, d)) * (0.30 + 0.25 * face) * mix(0.35, 1.0, lit);
+            lowp float glow = 0.0;   // no light falling onto the face
+            lowp float gloss = 0.0;
             col += (1.0 - col) * clamp(rim + glow + gloss, 0.0, 1.0);
             gl_FragColor = vec4(col, 1.0) * a * qt_Opacity;
         }
