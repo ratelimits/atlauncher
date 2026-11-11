@@ -25,6 +25,12 @@ function atlauncherLaunch(params) {
     pmLog.info("ATLAUNCHER_KEY", {"launched": ATLAUNCHER_HOME, "params": params});
 }
 
+// Settings key: ATLauncher's own Settings only while ATLauncher is in front; in apps and on inputs, LG's overlay.
+function atlauncherIsForeground() {
+    try { return !!global.isForegroundApp(ATLAUNCHER_HOME); }
+    catch (e) { return false; }   // can't tell: let LG handle the key
+}
+
 function handleATLauncherKey(key, pressed, autoRepeat, deviceId) {
     try {
         var home = key === Qt.Key_Super_L || key === Qt.Key_Meta;
@@ -34,6 +40,10 @@ function handleATLauncherKey(key, pressed, autoRepeat, deviceId) {
             return KeyPolicy.Accepted;
         if (!home && !input && !settings)
             return KeyPolicy.NextPolicy;
+        if (settings && !atlauncherIsForeground()) {
+            pmLog.info("ATLAUNCHER_KEY", {"settings": "passed to LG (ATLauncher not in front)"});
+            return KeyPolicy.NextPolicy;
+        }
         // Leave first-use setup and blocking system dialogs to LG.
         if ((bootManager && bootManager.bootFirstUse) || (modalAlert && modalAlert.visible))
             return KeyPolicy.NextPolicy;
