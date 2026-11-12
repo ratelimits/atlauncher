@@ -12,21 +12,39 @@
 # initial - the letter shown next to the clock: atlauncher.sh initial J (or "clear" for the person icon). enable asks.
 # Internal: early (boot hook, before SAM reads apps), boot (boot hook, long-running helpers).
 # Log: /var/lib/atlauncher/boot.log
+# webOS 5 (2020 TVs) has no Python and an older BusyBox: Node (built in) does the JSON steps where python3 is missing,
+# and the timeout syntax is detected. LG's Home there is com.webos.app.fullhome (the TV's defaultApps.home).
 set -u
 ID=com.ratelimits.atlauncher
 APP=/media/developer/apps/usr/palm/applications/$ID
 DATA=/var/lib/atlauncher
 OV=$DATA/home-overlay
-T=/usr/palm/applications/com.webos.app.home
+# LG's Home app, found by enable (detect_home) and kept for the boot hooks: com.webos.app.home, or
+# com.webos.app.fullhome on webOS 5.
+HOME_ID=$(cat "$DATA/home-id" 2>/dev/null)
+[ "$HOME_ID" = com.webos.app.fullhome ] || HOME_ID=com.webos.app.home
+T=/usr/palm/applications/$HOME_ID
 HOOKS=/var/lib/webosbrew/init.d
 KEYCFG=com.webos.surfacemanager.keyFilters
 LOG=$DATA/boot.log
 
 log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
-L() { timeout 10 luna-send -n 1 "$@" 2>/dev/null; }
+# GNU and newer BusyBox: timeout SECS CMD. BusyBox before 1.30 (webOS 5): timeout -t SECS CMD.
+if timeout 1 true 2>/dev/null; then tmo() { timeout "$@"; }; else tmo() { _s=$1; shift; timeout -t "$_s" "$@"; }; fi
+has_python() { command -v python3 >/dev/null 2>&1; }
+L() { tmo 10 luna-send -n 1 "$@" 2>/dev/null; }
 mounted() { findmnt "$T" >/dev/null 2>&1; }
 installed() { [ -f "$APP/main.qml" ]; }
 fg() { L luna://com.webos.applicationManager/getForegroundAppInfo '{}' | sed -n 's/.*"appId": *"\([^"]*\)".*/\1/p'; }
+
+# Which app is LG's Home: the TV's own defaultApps.home setting. Only the two known ids are accepted.
+detect_home() {
+  id=$(L luna://com.webos.settingsservice/getSystemSettings '{"category":"general","keys":["defaultApps"]}' |
+    sed -n 's/.*"home": *"\([^"]*\)".*/\1/p')
+  { [ "$id" = com.webos.app.fullhome ] && [ -d "/usr/palm/applications/$id" ]; } || id=com.webos.app.home
+  echo "$id" > "$DATA/home-id"
+  HOME_ID=$id; T=/usr/palm/applications/$HOME_ID
+}
 
 # ---- the Home overlay ----
 
@@ -35,11 +53,12 @@ build() {
   for name in $(ls "$APP"); do
     [ "$name" = appinfo.json ] || ln -s "$APP/$name" "$OV/$name"
   done
-  python3 - "$APP/appinfo.json" "$OV/appinfo.json" <<'PY'
+  if has_python; then
+  python3 - "$APP/appinfo.json" "$OV/appinfo.json" "$HOME_ID" <<'PY'
 import json, sys
 a = json.load(open(sys.argv[1]))
 a.update({
-    "id": "com.webos.app.home", "title": "Home", "visible": False, "class": {"hidden": True},
+    "id": sys.argv[3], "title": "Home", "visible": False, "class": {"hidden": True},
     "appCategory": ["home"], "lockable": False, "handlesRelaunch": True,
     # LG Home's own permissions (it is a system app, so they are granted).
     "requiredPermissions": ["applications", "applications.launcher", "applications.operation", "applications.internal",
@@ -47,23 +66,41 @@ a.update({
 })
 json.dump(a, open(sys.argv[2], "w"), indent=2)
 PY
+  else
+  node -e '
+var fs = require("fs"), arg = process.argv;
+var a = JSON.parse(fs.readFileSync(arg[1], "utf8")), u = {
+  id: arg[3], title: "Home", visible: false, "class": { hidden: true },
+  appCategory: ["home"], lockable: false, handlesRelaunch: true,
+  requiredPermissions: ["applications", "applications.launcher", "applications.operation", "applications.internal",
+                        "launcher.status", "launcher.control", "settings", "system", "database", "private"]
+};
+Object.keys(u).forEach(function (k) { a[k] = u[k]; });
+fs.writeFileSync(arg[2], JSON.stringify(a, null, 2));
+' "$APP/appinfo.json" "$OV/appinfo.json" "$HOME_ID"
+  fi
 }
 
-# LG Home runs as its own process (flutter-client), which survives a SAM restart: end it by scanning /proc (a pkill
-# pattern can match the caller's own shell).
+# LG Home runs as its own process (flutter-client; webOS 5's fullhome is /usr/bin/com.webos.app.fullhome), which
+# survives a SAM restart: end it by scanning /proc (a pkill pattern can match the caller's own shell).
+lg_home_cmd() {
+  case "$1" in *flutter-client*"$HOME_ID"*) return 0 ;; esac
+  [ "$HOME_ID" = com.webos.app.fullhome ] && case "$1" in /usr/bin/com.webos.app.fullhome*) return 0 ;; esac
+  return 1
+}
 end_lg_home() {
   for p in /proc/[0-9]*; do
     c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
-    case "$c" in *flutter-client*com.webos.app.home*) kill "${p#/proc/}" 2>/dev/null ;; esac
+    lg_home_cmd "$c" && kill "${p#/proc/}" 2>/dev/null
   done
 }
 
-sam_sees_atlauncher() { L luna://com.webos.applicationManager/getAppInfo '{"id":"com.webos.app.home"}' | grep -q '"type": *"qml"'; }
-sam_answers() { L luna://com.webos.applicationManager/getAppInfo '{"id":"com.webos.app.home"}' | grep -q '"returnValue": *true'; }
+sam_sees_atlauncher() { L luna://com.webos.applicationManager/getAppInfo "{\"id\":\"$HOME_ID\"}" | grep -q '"type": *"qml"'; }
+sam_answers() { L luna://com.webos.applicationManager/getAppInfo "{\"id\":\"$HOME_ID\"}" | grep -q '"returnValue": *true'; }
 lg_home_running() {
   for p in /proc/[0-9]*; do
     c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
-    case "$c" in *flutter-client*com.webos.app.home*) return 0 ;; esac
+    lg_home_cmd "$c" && return 0
   done
   return 1
 }
@@ -75,9 +112,9 @@ lg_home_running() {
 sam_reread_home() {
   force=
   grep -q '"forceBlockSystemApp"' /etc/palm/schemas/sam/applicationManager.blockSystemApp.schema 2>/dev/null && force=',"forceBlockSystemApp":false'
-  L luna://com.webos.applicationManager/blockSystemApp "{\"id\":\"com.webos.app.home\"$force}" >/dev/null
+  L luna://com.webos.applicationManager/blockSystemApp "{\"id\":\"$HOME_ID\"$force}" >/dev/null
   i=0; while [ $i -lt 3 ]; do
-    L luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.home"}' | grep -q '"returnValue": *true' && break
+    L luna://com.webos.applicationManager/releaseBlockSystemApp "{\"id\":\"$HOME_ID\"}" | grep -q '"returnValue": *true' && break
     i=$((i + 1)); sleep 1
   done
   i=0; while [ $i -lt 10 ]; do sam_sees_atlauncher && return 0; i=$((i + 1)); sleep 1; done
@@ -98,9 +135,9 @@ take_home() {
 
 open_home() {
   i=0; while [ $i -lt 10 ]; do
-    L luna://com.webos.applicationManager/launch '{"id":"com.webos.app.home"}' >/dev/null
+    L luna://com.webos.applicationManager/launch "{\"id\":\"$HOME_ID\"}" >/dev/null
     sleep 4
-    [ "$(fg)" = com.webos.app.home ] && return
+    [ "$(fg)" = "$HOME_ID" ] && return
     i=$((i + 1))
   done
 }
@@ -115,13 +152,14 @@ restart_sam_and_home() {
 
 unmount_all() {
   # The mount also appears inside app jails (mount propagation): undo every copy, innermost first.
-  for m in $(findmnt -rn -o TARGET | grep "/com.webos.app.home\$" | sort -r); do umount -l "$m" 2>/dev/null; done
+  for m in $(findmnt -rn -o TARGET | grep "/$HOME_ID\$" | sort -r); do umount -l "$m" 2>/dev/null; done
 }
 
 # ---- remote keys (surface-manager key filter, configd runtime config) ----
 
 keys_on() {
   [ -f "$DATA/keyFilters.original.json" ] || L luna://com.webos.service.config/getConfigs "{\"configNames\":[\"$KEYCFG\"]}" > "$DATA/keyFilters.original.json"
+  if has_python; then
   payload=$(python3 - "$DATA/keyFilters.original.json" "$DATA/homekey.js" "$KEYCFG" <<'PY'
 import json, sys
 orig = json.load(open(sys.argv[1]))["configs"][sys.argv[3]]
@@ -133,12 +171,27 @@ filters.insert(at, mine)
 print(json.dumps({"configs": {sys.argv[3]: filters}}))
 PY
 )
+  else
+  payload=$(node -e '
+var fs = require("fs"), a = process.argv;
+var orig = JSON.parse(fs.readFileSync(a[1], "utf8")).configs[a[3]];
+var filters = orig.filter(function (f) { return f.file !== a[2]; }), at = 3;
+for (var i = 0; i < filters.length; i++) if (filters[i].handler === "handleScreenSaver") { at = i + 1; break; }
+filters.splice(at, 0, { handler: "handleATLauncherKey", file: a[2] });
+var c = {}; c[a[3]] = filters;
+console.log(JSON.stringify({ configs: c }));
+' "$DATA/keyFilters.original.json" "$DATA/homekey.js" "$KEYCFG")
+  fi
   L luna://com.webos.service.config/setConfigs "$payload" >/dev/null
 }
 
 keys_off() {
   [ -f "$DATA/keyFilters.original.json" ] || return
-  payload=$(python3 -c "import json,sys; print(json.dumps({'configs': json.load(open(sys.argv[1]))['configs']}))" "$DATA/keyFilters.original.json")
+  if has_python; then
+    payload=$(python3 -c "import json,sys; print(json.dumps({'configs': json.load(open(sys.argv[1]))['configs']}))" "$DATA/keyFilters.original.json")
+  else
+    payload=$(node -e 'var a = process.argv; console.log(JSON.stringify({ configs: JSON.parse(require("fs").readFileSync(a[1], "utf8")).configs }))' "$DATA/keyFilters.original.json")
+  fi
   L luna://com.webos.service.config/setConfigs "$payload" >/dev/null
 }
 
@@ -188,9 +241,19 @@ helpers_off() {
 copy_tools() {
   mkdir -p "$DATA/custom/icons" "$DATA/custom/art" "$DATA/fonts"
   # Copied, then renamed into place: this script may be the one being replaced, and sh reads it as it runs.
-  for f in atlauncher.sh homekey.js apps-watch.sh home-redirect.sh storeicons.py; do
+  for f in atlauncher.sh homekey.js apps-watch.sh home-redirect.sh storeicons.py apps-list.js storeicons.js; do
     cp "$APP/tools/$f" "$DATA/$f.new" && mv -f "$DATA/$f.new" "$DATA/$f"
   done
+  # The Home key opens LG's Home app id, which the overlay gives to ATLauncher.
+  sed "s/^var ATLAUNCHER_HOME = .*/var ATLAUNCHER_HOME = \"$HOME_ID\";/" "$APP/tools/homekey.js" > "$DATA/homekey.js.new" &&
+    mv -f "$DATA/homekey.js.new" "$DATA/homekey.js"
+}
+
+# webOS 5's fullhome gets its bus role from its program file (/usr/bin/com.webos.app.fullhome), so ATLauncher mounted
+# under its id has none: launching apps fails. The role is an opt-in step (scripts/setup-qml-permissions.js --home).
+home_role_missing() {
+  [ "$HOME_ID" = com.webos.app.home ] && return 1
+  ! grep -qs "\"$HOME_ID\"" "/var/luna-service2-dev/roles.d/$HOME_ID.app.json"
 }
 
 hooks_on() {
@@ -206,6 +269,12 @@ case "${1:-status}" in
   enable)
     installed || { echo "ATLauncher is not installed ($APP)" >&2; exit 1; }
     mkdir -p "$DATA"
+    detect_home
+    if home_role_missing; then
+      echo "LG Home on this TV is $HOME_ID, which needs a bus role for ATLauncher to launch apps as Home." >&2
+      echo "Run scripts/setup-qml-permissions.js --home as root first (see README), then enable again." >&2
+      exit 1
+    fi
     # The letter next to the clock (optional): asked only when run from a terminal.
     if [ -t 0 ] && [ ! -f "$DATA/profile.json" ]; then
       printf 'Your initial for the top-right of the Home Screen (Enter to skip): '
@@ -217,7 +286,7 @@ case "${1:-status}" in
     keys_on
     helpers_off; helpers
     rm -f "$DATA/lg-home-next-boot" /tmp/atlauncher-lg-home
-    L luna://com.webos.applicationManager/closeByAppId '{"id":"com.webos.app.home"}' >/dev/null; sleep 2
+    L luna://com.webos.applicationManager/closeByAppId "{\"id\":\"$HOME_ID\"}" >/dev/null; sleep 2
     unmount_all; build; end_lg_home
     mount --bind "$OV" "$T" || { echo "mount failed" >&2; exit 1; }
     echo "Restarting SAM (open apps close)..."
@@ -230,9 +299,10 @@ case "${1:-status}" in
     hooks_off
     keys_off
     helpers_off
-    L luna://com.webos.applicationManager/closeByAppId '{"id":"com.webos.app.home"}' >/dev/null; sleep 2
+    L luna://com.webos.applicationManager/closeByAppId "{\"id\":\"$HOME_ID\"}" >/dev/null; sleep 2
     unmount_all
     systemctl restart sam.service
+    rm -f "$DATA/home-id"
     sleep 3; media_check
     log "disabled"
     echo "LG Home restored. ATLauncher stays installed as a normal app; its data is in $DATA."
@@ -242,7 +312,7 @@ case "${1:-status}" in
     set_initial "${2:-}"
     for p in /proc/[0-9]*; do
       c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
-      case "$c" in /usr/bin/qml-runner*com.webos.app.home*) kill "${p#/proc/}" 2>/dev/null ;; esac
+      case "$c" in /usr/bin/qml-runner*"$HOME_ID"*) kill "${p#/proc/}" 2>/dev/null ;; esac
     done
     mounted && { sleep 2; open_home; }
     ;;
@@ -255,7 +325,7 @@ case "${1:-status}" in
     done
     for p in /proc/[0-9]*; do
       c=$(tr '\0' ' ' 2>/dev/null < "$p/cmdline") || continue
-      case "$c" in /usr/bin/qml-runner*com.webos.app.home*) kill "${p#/proc/}" 2>/dev/null ;; esac
+      case "$c" in /usr/bin/qml-runner*"$HOME_ID"*) kill "${p#/proc/}" 2>/dev/null ;; esac
     done
     sleep 2; open_home
     log "relinked"; echo "ATLauncher updated."
@@ -278,7 +348,7 @@ case "${1:-status}" in
     [ -f /tmp/atlauncher-lg-home ] && exit 0
     installed || exit 0
     # A block cut short (power cut between the two calls) would leave Home unable to launch: release it once.
-    L luna://com.webos.applicationManager/releaseBlockSystemApp '{"id":"com.webos.app.home"}' >/dev/null
+    L luna://com.webos.applicationManager/releaseBlockSystemApp "{\"id\":\"$HOME_ID\"}" >/dev/null
     helpers
     mounted && take_home
     i=0; while [ $i -lt 90 ]; do

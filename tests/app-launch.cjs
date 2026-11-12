@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const s=fs.readFileSync(require('path').join(__dirname, '../app/Home.qml'),'utf8');
 function fn(n){let a=s.indexOf('function '+n+'('),b=s.indexOf('{',a),d=1,i=b+1;for(;d;i++){if(s[i]==='{')d++;if(s[i]==='}')d--;}return s.slice(a,i);}
-const c={Cat:{SETTINGS_ID:"settings",ESCAPE_ID:"escape"}}; vm.createContext(c);
+const c={Cat:{SETTINGS_ID:"settings",ESCAPE_ID:"escape"},lgHomeId:"escape"}; vm.createContext(c);
 const main=fs.readFileSync(require('path').join(__dirname,'../app/main.qml'),'utf8');
 assert(!/luna:\s*luna\s*(?:\n|$)/.test(main),'Home.luna must not bind to itself');
 assert(/id:\s*lunaClient/.test(main)&&/luna:\s*lunaClient/.test(main));

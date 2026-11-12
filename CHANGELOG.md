@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- webOS 5 (2020 TVs): the tools run without Python (their JSON steps in the TV's Node, only where `python3` is
+  missing) and with BusyBox's older `timeout -t` syntax (detected). The takeover reads LG's Home app from the TV's
+  `defaultApps.home` (`com.webos.app.fullhome` on webOS 5) and mounts over that one; elsewhere nothing changes.
+  `scripts/setup-qml-permissions.js` is the Node version of the QML registration repair, and with `--home` adds
+  the role ATLauncher needs to run as fullhome (opt-in). Not yet tested on a webOS 5 TV.
 - Settings → Top Shelf: Streaming Region and Suggestion Language also step back and forth with ← and →, now that
   the lists are long (OK or a click still goes forward).
 - The focused app glows softly in its own colour, evenly on every side, over a lighter shadow; its lighting is a thin

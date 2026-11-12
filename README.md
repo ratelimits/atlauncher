@@ -71,6 +71,7 @@ and `/var/lib/atlauncher/boot.log`. For icon problems, include `/var/lib/atlaunc
 | LG UR8000 | `??UR8000AUA` | 25 (10.3.1) | ✅ |
 | LG C5 | `OLEDC5??AUA` | 25 (10.3.1) | ✅ |
 | LG B4 (65-inch) | `OLED65B49LA.DEUQLJP` | 25 (10.3.2) | ✅ |
+| LG GX (77-inch) | `OLED77GXPUA` | 5 (5.6.2) | Untested ([webOS 5](#webos-5-2020-tvs)) |
 
 > [!NOTE]
 > `??` is the screen size. The UR8000 shipped with webOS 23 and runs webOS 25 after LG's webOS Re:New update.
@@ -123,6 +124,11 @@ with public API access, and reloads this app's manifest. Backups are saved under
 `/var/lib/atlauncher/backups/`; a failed update restores the original files. Reopen
 ATLauncher afterwards. An app update can replace the manifest, requiring the repair again.
 
+On a TV without Python 3 (webOS 5), copy `scripts/setup-qml-permissions.js` instead and run it with the TV's Node:
+`node setup-qml-permissions.js`. It makes the same change; where the bus has no `addOneManifest`, it reloads the
+hub with `ls-control scan-services`. With `--home` it also adds that role for LG's Home app id when that is
+`com.webos.app.fullhome` (see [webOS 5](#webos-5-2020-tvs)).
+
 Regression check: `python3 tests/qml-permissions.py`.
 
 ## Replacing LG Home
@@ -151,6 +157,25 @@ sh /var/lib/atlauncher/atlauncher.sh initial J   # the letter next to the clock 
 
 To use LG Home once without disabling anything: **Settings → System → Restart into LG Home**; the restart after that
 brings ATLauncher back. Boot log: `/var/lib/atlauncher/boot.log`.
+
+### webOS 5 (2020 TVs)
+
+> [!CAUTION]
+> The takeover on webOS 5 has not been tested on a TV yet. Keep SSH working so you can run `disable`.
+
+The scripts adapt by themselves: where `python3` is missing, their JSON steps run in the TV's Node
+(`tools/apps-list.js`, `tools/storeicons.js` and inline Node in the scripts); the `timeout` syntax is detected
+(BusyBox before 1.30 only takes `timeout -t SECS`); and LG's Home app is read from the TV's `defaultApps.home`
+setting, which is `com.webos.app.fullhome` on webOS 5. The overlay then claims that id instead of
+`com.webos.app.home`.
+
+LG's fullhome gets its bus permissions from its program file (`/usr/bin/com.webos.app.fullhome`), not its app id,
+so ATLauncher running under that id could not launch apps. Before `enable`, add an app-id role for it (opt-in;
+`enable` stops with a message until it exists):
+
+```sh
+node setup-qml-permissions.js --home
+```
 
 <details>
 <summary>How it works</summary>
@@ -288,7 +313,9 @@ git and never packaged).
 ### App launch regression checks
 
 Run `node tests/service-errors.cjs` and `node tests/app-launch.cjs` for the service
-adapter error paths, callback completion and Home's launch dispatch.
+adapter error paths, callback completion and Home's launch dispatch. `node tests/node-fallbacks.cjs` (needs
+`python3`) checks that each Node step for TVs without Python gives the same result as its Python step, and that the
+`timeout` probe handles both syntaxes.
 
 The desktop preview needs Qt 5 (`brew install qt@5`):
 

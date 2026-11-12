@@ -23,7 +23,10 @@ Item {
     property string version: ''
     // Test only ({"art": "4k"}): decode backdrops at 3840x2160 instead of 1920x1080.
     property bool art4k: false
-    readonly property bool asHome: appId === Cat.ESCAPE_ID
+    readonly property bool asHome: Cat.HOME_IDS.indexOf(appId) >= 0
+    // LG's Home app: this app's id when ATLauncher is Home, else the TV's defaultApps.home (readTvLocale).
+    property string tvHomeId: ''
+    readonly property string lgHomeId: asHome ? appId : (tvHomeId || Cat.ESCAPE_ID)
     // 'tv' (LG webOS) or 'mac' (a desktop build: no LG settings, no installed-app list).
     property string platform: 'tv'
     readonly property bool onTv: platform === 'tv'
@@ -112,6 +115,11 @@ Item {
             if (value) tvRegion = Locale.region(value.smartServiceCountryCode2 || value.country);
             localeTimer.restart();
         });
+        if (!asHome) call('luna://com.webos.settingsservice/getSystemSettings',
+                          { category: 'general', keys: ['defaultApps'] }, function (r) {
+            var home = r && r.settings && r.settings.defaultApps && r.settings.defaultApps.home;
+            if (Cat.HOME_IDS.indexOf(home) >= 0) tvHomeId = home;
+        });
         call('luna://com.webos.settingsservice/getSystemSettings', { keys: ['localeInfo'] }, function (r) {
             var info = r && r.settings && r.settings.localeInfo;
             if (info && info.locales && info.locales.UI) tvLanguage = Locale.language(info.locales.UI);
@@ -161,7 +169,7 @@ Item {
 
     function launch(app) {
         if (app.id === Cat.SETTINGS_ID) { openSettings(); return; }
-        if (app.id !== Cat.ESCAPE_ID) Store.set('lastApp', app.id);
+        if (app.id !== lgHomeId) Store.set('lastApp', app.id);
         if (app.open) {
             call(app.open, {}, function (r) { if (r && r.returnValue === false) call('luna://com.webos.applicationManager/launch', { id: app.id }); });
             return;
@@ -175,7 +183,7 @@ Item {
     // version's developer-app id, which nothing else launches) to restart the TV into LG Home. Two presses.
     property double escapeArmed: 0
     function restartIntoLgHome() {
-        if (!asHome) { launch({ id: Cat.ESCAPE_ID, name: 'LG Home' }); return; }
+        if (!asHome) { launch({ id: lgHomeId, name: 'LG Home' }); return; }
         if (Date.now() < escapeArmed) {
             escapeArmed = 0;
             toast('Restarting into LG Home… The restart after that brings ATLauncher back.');
@@ -192,7 +200,7 @@ Item {
 
     function returnToPriorViewing() {
         var prev = Store.get('lastApp', '');
-        var app = apps.filter(function (a) { return a.id === prev && a.id !== Cat.ESCAPE_ID; })[0];
+        var app = apps.filter(function (a) { return a.id === prev && a.id !== lgHomeId; })[0];
         if (app) launch(app); else bumpTile(selected, 'down');
     }
 

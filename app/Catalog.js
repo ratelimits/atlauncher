@@ -13,7 +13,10 @@ var OWN_ID = 'com.ratelimits.atlauncher';
 var APP_DIR = '/media/developer/apps/usr/palm/applications/' + OWN_ID;
 var DATA_DIR = '/var/lib/atlauncher';
 var SETTINGS_ID = 'atlauncher.settings';
+// LG's own Home app: com.webos.app.home, or com.webos.app.fullhome on webOS 5 (2020 TVs). Running under either id means
+// ATLauncher is the Home app (atlauncher.sh's overlay); otherwise the TV's defaultApps.home says which one to open.
 var ESCAPE_ID = 'com.webos.app.home';
+var HOME_IDS = ['com.webos.app.home', 'com.webos.app.fullhome'];
 
 var KNOWN = [
     { id: 'netflix', name: 'Netflix', shelf: 'art/netflix.png', tmdb: 8, style: 'carousel' },
