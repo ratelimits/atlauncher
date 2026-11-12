@@ -4,10 +4,20 @@
 # (LG's system apps included, and the hidden inputs and AirPlay that ATLauncher shows) are copied into appicons/; your own art in custom/icons and custom/art
 # (<app id>.png|jpg) is listed too and used first, and App Store icons fetched by storeicons.py (storeicons/) are
 # added as storeTile / storeIcon. Started by atlauncher.sh (root).
+# Where python3 is missing (webOS 5), the same steps run in Node: apps-list.js and storeicons.js.
 DATA=/var/lib/atlauncher
 OUT=$DATA/apps.json
+# GNU and newer BusyBox: timeout SECS CMD. BusyBox before 1.30 (webOS 5): timeout -t SECS CMD.
+if timeout 1 true 2>/dev/null; then tmo() { timeout "$@"; }; else tmo() { _s=$1; shift; timeout -t "$_s" "$@"; }; fi
+has_python() { command -v python3 >/dev/null 2>&1; }
+storeicons() { if has_python; then python3 "$DATA/storeicons.py" "$@"; else node "$DATA/storeicons.js" "$@"; fi; }
 
 write() {
+  if ! has_python; then
+    luna-send -n 1 luna://com.webos.applicationManager/listApps '{}' 2>/dev/null | node "$DATA/apps-list.js" "$DATA" > "$OUT.tmp" 2>/dev/null &&
+      [ -s "$OUT.tmp" ] && mv -f "$OUT.tmp" "$OUT"
+    return
+  fi
   luna-send -n 1 luna://com.webos.applicationManager/listApps '{}' 2>/dev/null | python3 -c '
 import json, os, shutil, sys, time
 data = sys.argv[1]
@@ -71,8 +81,8 @@ print(json.dumps({"ts": int(time.time() * 1000), "apps": out}, separators=(",", 
 
 # App Store icons in the background (one run at a time); new icons rewrite the list.
 store() {
-  [ -f "$DATA/storeicons.py" ] || return
-  ( flock -n 8 || exit 0; python3 "$DATA/storeicons.py"; [ $? -eq 3 ] && write ) 8>/tmp/atlauncher-store.lock &
+  if has_python; then [ -f "$DATA/storeicons.py" ] || return; else [ -f "$DATA/storeicons.js" ] || return; fi
+  ( flock -n 8 || exit 0; storeicons; [ $? -eq 3 ] && write ) 8>/tmp/atlauncher-store.lock &
 }
 
 # Refetch requests from Settings > Apps > <app> > App Store Icon: ATLauncher stores "<app id>:<time>" in its settings
@@ -80,14 +90,14 @@ store() {
 # in refetch.done, so renewing the subscription (which repeats the current value) doesn't refetch again.
 refetch_watch() {
   while :; do
-    timeout 300 luna-send -i luna://com.webos.settingsservice/getSystemSettings \
+    tmo 300 luna-send -i luna://com.webos.settingsservice/getSystemSettings \
       '{"app_id":"com.ratelimits.atlauncher","category":"atlauncher","keys":["refetch"],"subscribe":true}' 2>/dev/null |
     while read -r line; do
       req=$(echo "$line" | sed -n 's/.*"refetch": *"\([^"]*\)".*/\1/p')
       [ -n "$req" ] || continue
       [ "$req" = "$(cat "$DATA/refetch.done" 2>/dev/null)" ] && continue
       echo "$req" > "$DATA/refetch.done"
-      ( flock 8; python3 "$DATA/storeicons.py" --refetch "${req%%:*}"; [ $? -eq 3 ] && write ) 8>/tmp/atlauncher-store.lock
+      ( flock 8; storeicons --refetch "${req%%:*}"; [ $? -eq 3 ] && write ) 8>/tmp/atlauncher-store.lock
     done
     sleep 1
   done
@@ -100,7 +110,7 @@ while :; do
   write
   store
   # One line per change after the initial list; re-write on each, and every 5 minutes (custom art changes too).
-  timeout 300 luna-send -i luna://com.webos.applicationManager/listApps '{"subscribe":true}' 2>/dev/null |
+  tmo 300 luna-send -i luna://com.webos.applicationManager/listApps '{"subscribe":true}' 2>/dev/null |
   while read -r line; do
     case "$line" in *'"change"'*) write; store ;; esac
   done

@@ -8,6 +8,11 @@
 # boot, and the TV restarted.
 ID=com.ratelimits.atlauncher
 DATA=/var/lib/atlauncher
+# LG's Home app id as found by atlauncher.sh enable (com.webos.app.fullhome on webOS 5).
+HOME_ID=$(cat $DATA/home-id 2>/dev/null)
+[ "$HOME_ID" = com.webos.app.fullhome ] || HOME_ID=com.webos.app.home
+# GNU and newer BusyBox: timeout SECS CMD. BusyBox before 1.30 (webOS 5): timeout -t SECS CMD.
+if timeout 1 true 2>/dev/null; then tmo() { timeout "$@"; }; else tmo() { _s=$1; shift; timeout -t "$_s" "$@"; }; fi
 
 exec 9>/tmp/atlauncher-redirect.lock
 flock -n 9 || exit 0
@@ -18,7 +23,7 @@ flock -n 9 || exit 0
 # remembered across restarts (webOS can reopen the last app, ATLauncher's own id, at boot).
 requested() {
   [ "$(cut -d. -f1 /proc/uptime)" -ge 120 ] || return 1
-  at=$(timeout 10 luna-send -n 1 luna://com.webos.settingsservice/getSystemSettings \
+  at=$(tmo 10 luna-send -n 1 luna://com.webos.settingsservice/getSystemSettings \
     '{"app_id":"com.ratelimits.atlauncher","category":"atlauncher","keys":["lgHome"]}' 2>/dev/null |
     sed -n 's/.*"lgHome": *"\{0,1\}\([0-9]*\).*/\1/p')
   [ "${#at}" -ge 13 ] || return 1
@@ -27,7 +32,7 @@ requested() {
   age=$(($(date +%s) - ${at%???}))
   [ "$age" -ge -5 ] && [ "$age" -le 20 ] || return 1
   echo "$at" > $DATA/redirect.done
-  timeout 10 luna-send -n 1 luna://com.webos.settingsservice/setSystemSettings \
+  tmo 10 luna-send -n 1 luna://com.webos.settingsservice/setSystemSettings \
     '{"app_id":"com.ratelimits.atlauncher","category":"atlauncher","settings":{"lgHome":"0"}}' >/dev/null 2>&1
 }
 
@@ -35,18 +40,18 @@ PREV=/tmp/atlauncher-redirect.prev
 : > $PREV
 while :; do
   # Renewed every 30 s: a subscription made before SAM restarts goes silent without ending.
-  timeout 30 luna-send -i luna://com.webos.applicationManager/getForegroundAppInfo '{"subscribe":true}' 2>/dev/null |
+  tmo 30 luna-send -i luna://com.webos.applicationManager/getForegroundAppInfo '{"subscribe":true}' 2>/dev/null |
   while read -r line; do
     app=$(echo "$line" | sed -n 's/.*"appId": *"\([^"]*\)".*/\1/p')
     [ -n "$app" ] || continue
     previous=$(cat $PREV)
     [ "$app" = "$previous" ] && continue
-    if findmnt /usr/palm/applications/com.webos.app.home >/dev/null 2>&1 && [ "$app" = "$ID" ] && [ "$previous" = com.webos.app.home ] && requested; then
+    if findmnt "/usr/palm/applications/$HOME_ID" >/dev/null 2>&1 && [ "$app" = "$ID" ] && [ "$previous" = "$HOME_ID" ] && requested; then
       echo "$(date '+%F %T') LG Home requested: restarting" >> $DATA/boot.log
       touch $DATA/lg-home-next-boot
       sync
       sleep 2   # let the "Restarting into LG Home" message show
-      timeout 15 luna-send -n 1 luna://com.webos.service.tvpower/power/reboot '{"reason":"reset"}' >/dev/null 2>&1 || reboot
+      tmo 15 luna-send -n 1 luna://com.webos.service.tvpower/power/reboot '{"reason":"reset"}' >/dev/null 2>&1 || reboot
     fi
     echo "$app" > $PREV
   done
