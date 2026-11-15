@@ -18,8 +18,9 @@ budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home 
   rim-lit icons, and tilt-toward-the-move focus.
 - **App icons**: each app's Apple TV icon from the App Store, fetched by the TV; apps without one keep their own
   webOS icon. The TV's own icons for its HDMI inputs, Internet, App Store and AirPlay.
-- **Top Shelf**: a splash for each app; rest on Netflix, Prime Video, Disney+, Hulu or Apple TV for 5 seconds and
-  its popular shows appear from [TMDB](https://www.themoviedb.org) (full-screen carousel or a "Top Shows" row).
+- **Top Shelf**: a splash for each app; rest on Netflix, Prime Video, Disney+, Hulu or Apple TV for 5 seconds
+  (Settings → Top Shelf → Show Delay) and its popular shows appear from [TMDB](https://www.themoviedb.org)
+  (full-screen carousel or a "Top Shows" row).
 - **App menu**: hold OK on an app for Quit App (while it runs), Edit Home Screen and Delete App.
 - **Settings**: per app, show or hide it, turn its App Store icon on or off, quit or delete it; rearrange apps; Top
   Shelf, Dock and icon options; LG's quick settings; and a way back to LG Home.

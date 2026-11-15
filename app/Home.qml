@@ -40,7 +40,10 @@ Item {
     readonly property int barX: 39
     readonly property int barY: 784
 
-    readonly property int tmdbRevealMs: 5000
+    // How long to rest on an app before its TMDB shows replace its splash (Settings > Top Shelf > Show Delay).
+    readonly property var revealChoices: [1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 30]
+    readonly property int tmdbRevealSecs: revealChoices.indexOf(prefs.tmdbDelay) >= 0 ? prefs.tmdbDelay : 5
+    readonly property int tmdbRevealMs: tmdbRevealSecs * 1000
     readonly property int carouselMs: 9000
     readonly property int shelfDwellMs: 300
     readonly property int longPressMs: 600
@@ -557,9 +560,12 @@ Item {
               note: 'Language for titles and descriptions. Automatic follows the TV menu language; press OK or \u2190 \u2192 to change.',
               step: function (dir) { setPref('tmdbLanguage', Locale.next(languages, prefs.tmdbLanguage || 'auto', dir)); applyLocale(); } },
             { label: 'Movies and Shows', value: tmdbKey ? onOff(!prefs.tmdbOff) : 'No API key', glyph: 'shelf',
-              note: tmdbKey ? 'Each app shows its own splash first; after 5 seconds on Netflix, Prime Video, Disney+, Hulu or Apple TV, its popular shows from TMDB. Off keeps the splashes. ' + tmdbNotice
+              note: tmdbKey ? 'Each app shows its own splash first; after resting on a streaming app with shows (Netflix, Prime Video, Disney+ and others) for the Show Delay, its popular shows from TMDB. Off keeps the splashes. ' + tmdbNotice
                             : 'Popular shows need your own free TMDB API key in ' + Cat.DATA_DIR + '/tmdb.key (see the README). Until then each app shows its own splash.',
-              act: function () { setPref('tmdbOff', !prefs.tmdbOff); if (prefs.tmdbOff) render(true); else armReveal(); refreshSettings(); } }
+              act: function () { setPref('tmdbOff', !prefs.tmdbOff); if (prefs.tmdbOff) render(true); else armReveal(); refreshSettings(); } },
+            { label: 'Show Delay', value: tmdbRevealSecs + (tmdbRevealSecs === 1 ? ' second' : ' seconds'), glyph: 'shelf',
+              note: 'How long to rest on an app before its shows replace its splash. Press OK or \u2190 \u2192 to change.',
+              step: function (dir) { setPref('tmdbDelay', Locale.next(revealChoices, tmdbRevealSecs, dir)); refreshSettings(); } }
         ] };
         if (id === 'look') return { title: 'Appearance', rows: [
             { label: 'Clock Format', value: Locale.clockMode(prefs) === 'auto' ? 'Automatic from TV (' + (tvTimeFormat === 'HH12' ? '12' : '24') + ' hours)' : Locale.clockMode(prefs) + ' hours', glyph: 'look',
