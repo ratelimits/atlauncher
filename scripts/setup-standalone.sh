@@ -8,6 +8,9 @@ HOOK=/var/lib/webosbrew/init.d/61-atlauncher-apps
 mkdir -p "$DATA/custom/icons" "$DATA/custom/art" /var/lib/webosbrew/init.d
 cp "$APP/tools/apps-watch.sh" "$DATA/apps-watch.sh"
 cp "$APP/tools/storeicons.py" "$DATA/storeicons.py"
+# Node versions of the Python steps, used where python3 is missing (webOS 5).
+cp "$APP/tools/apps-list.js" "$DATA/apps-list.js"
+cp "$APP/tools/storeicons.js" "$DATA/storeicons.js"
 cat > "$HOOK" <<'EOF'
 #!/bin/sh
 systemd-run --unit=atlauncher-apps --no-block /bin/sh /var/lib/atlauncher/apps-watch.sh

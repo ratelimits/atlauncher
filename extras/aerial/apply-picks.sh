@@ -20,6 +20,30 @@ fi
 mkdir -p "$B"
 [ -f "$B/videos.json" ] || cp -p "$A/videos.json" "$B/videos.json"
 [ -f "$B/settings.json" ] || cp -p "$A/settings.json" "$B/settings.json"
+if ! command -v python3 >/dev/null 2>&1; then
+  # webOS 5 has no Python: the same step in Node (built in).
+  node -e '
+var fs = require("fs"), a = process.argv;
+var backup = a[1], videosOut = a[2], settingsPath = a[3], picksPath = a[4];
+var picks = JSON.parse(fs.readFileSync(picksPath, "utf8"));
+var wanted = picks.picks.map(function (p) { return p.id; });
+var videos = JSON.parse(fs.readFileSync(backup, "utf8"));
+var byId = {};
+videos.assets.forEach(function (x) { byId[x.id] = x; });
+var kept = wanted.filter(function (i) { return byId[i]; }).map(function (i) { return byId[i]; });
+var missing = picks.picks.filter(function (p) { return !byId[p.id]; }).map(function (p) { return p.name; });
+videos.assets = kept;
+fs.writeFileSync(videosOut, JSON.stringify(videos));
+var settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+var types = ["url-1080-SDR", "url-1080-H264", "url-1080-HDR", "url-4K-SDR", "url-4K-HDR", "url-4K-SDR-240FPS"];
+settings.sourceType = picks.sourceType || "url-4K-SDR";
+if (types.indexOf(settings.sourceType) >= 0) settings.sourceTypeIndex = types.indexOf(settings.sourceType);
+fs.writeFileSync(settingsPath, JSON.stringify(settings));
+console.log("Aerial Screensaver: " + kept.length + " of " + wanted.length + " picks, " + settings.sourceType + "." +
+            (missing.length ? " Not in this version: " + missing.join(", ") : ""));
+' "$B/videos.json" "$A/videos.json" "$A/settings.json" "$HERE/picks.json"
+  exit 0
+fi
 python3 - "$B/videos.json" "$A/videos.json" "$A/settings.json" "$HERE/picks.json" <<'PY'
 import json, sys
 backup, videos_out, settings_path, picks_path = sys.argv[1:]
