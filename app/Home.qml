@@ -544,6 +544,9 @@ Item {
             var rows = [{ label: 'Edit Apps', glyph: 'move',
                 note: 'Choose an app, press OK, move with the arrows, then press OK to place it. Back exits editing.',
                 act: function () { startVisualEdit(); } }];
+            if (onTv) rows.push({ label: 'Update App Store Icons', glyph: 'apps',
+                note: 'Downloads every app\u2019s Apple TV icon again from the App Store (only apps that have one), in the background.',
+                act: function () { requestRefetch('*'); } });
             candidates.forEach(function (app) {
                 rows.push({ label: app.name, value: isHidden(app.id) ? 'Hidden' : 'Shown', page: 'app:' + app.id,
                     image: app.tile || app.icon || '', generic: !app.tile, color: app.color,
@@ -607,7 +610,7 @@ Item {
     function requestRefetch(id) {
         call('luna://com.webos.settingsservice/setSystemSettings',
              { app_id: Cat.OWN_ID, category: 'atlauncher', settings: { refetch: id + ':' + Date.now() } });
-        toast('Downloading its Apple TV icon again\u2026');
+        toast(id === '*' ? 'Updating App Store icons\u2026 They change as each one downloads.' : 'Downloading its Apple TV icon again\u2026');
     }
     function appPage(id) {
         var app = candidates.filter(function (a) { return a.id === id; })[0];

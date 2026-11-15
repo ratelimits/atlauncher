@@ -4,6 +4,7 @@
 
 - Settings → Top Shelf → Show Delay: how long to rest on an app before its TMDB shows replace its splash, 1 to 30
   seconds (5 by default); OK or ← → changes it.
+- Settings → Apps → Update App Store Icons: downloads every app's Apple TV icon again (apps that have one).
 - The remote's Settings key opens LG's quick settings in apps and on inputs, and ATLauncher's Settings only while
   ATLauncher is on screen (#15, thanks @n4bcb).
 

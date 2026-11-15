@@ -4,7 +4,9 @@ function fn(n){let a=s.indexOf('function '+n+'('),b=s.indexOf('{',a),d=1,i=b+1;f
 const Qt={Key_Left:1,Key_Right:2,Key_Up:3,Key_Down:4,Key_Return:5,Key_Back:6};
 const c={Qt,apps:[{id:'a'},{id:'b'},{id:'c'},{id:'hdmi',fixed:true}],selected:0,cols:6,editing:false,visualEdit:false,settings:{open:true},appMenu:{shown:false},Cat:{movable:a=>a&&!a.fixed},closeSettings(){c.settings.open=false},pressTimer:{stop(){}},holdTimer:{stop(){}},setMode(m){c.mode=m},render(){},tileAt:()=>null,bumpTile(){},appModel:{move(){}},saveOrder(){c.saved=c.apps.map(a=>a.id).join(',')},row:i=>Math.floor(i/6),move(dx,dy){c.selected=Math.max(0,Math.min(c.apps.length-1,c.selected+dx+dy*6))},isBack:k=>k===6,isOk:k=>k===5,okSuppress:false,okGap:{running:false,stop(){}},lastMove:0};
 vm.createContext(c);for(const n of ['startVisualEdit','chooseEditApp','startEditing','finishEditing','editKey','keyDown','pageFor'])vm.runInContext(fn(n),c);
-c.candidates=[];c.isHidden=()=>false;
+c.candidates=[];c.isHidden=()=>false;c.onTv=true;c.requestRefetch=id=>{c.refetched=id};
+const upd=c.pageFor('apps').rows[1];assert.equal(upd.label,'Update App Store Icons');upd.act();assert.equal(c.refetched,'*');
+c.settings.open=true;
 c.pageFor('apps').rows[0].act();assert(c.visualEdit&&!c.settings.open&&!c.editing);
 function key(k){c.okSuppress=false;c.keyDown(k,false)}
 key(2);assert.equal(c.selected,1);key(5);assert(c.editing);key(1);assert.equal(c.apps[0].id,'b');key(5);assert(!c.editing&&c.visualEdit);
