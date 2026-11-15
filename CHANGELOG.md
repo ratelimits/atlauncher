@@ -1,13 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Settings → Top Shelf → Show Delay: how long to rest on an app before its TMDB shows replace its splash, from
-  immediately to 30 seconds (5 by default); OK or ← → changes it.
-- Settings → Apps → Update App Store Icons: downloads every app's Apple TV icon again (apps that have one).
-- The remote's Settings key opens LG's quick settings in apps and on inputs, and ATLauncher's Settings only while
-  ATLauncher is on screen (#15, thanks @n4bcb).
-
 ## 1.0.5
 
 - Settings → Top Shelf: Streaming Region and Suggestion Language also step back and forth with ← and →, now that
@@ -17,6 +9,11 @@
   half, as on tvOS 27.
 - Fix: apps installed or removed shortly after boot appear on (or leave) the Home screen straight away, instead of
   after up to five minutes: the app list follows SAM again as soon as it restarts (#14, thanks @n4bcb).
+- Settings → Top Shelf → Show Delay: how long to rest on an app before its TMDB shows replace its splash, from
+  immediately to 30 seconds (5 by default); OK or ← → changes it.
+- Settings → Apps → Update App Store Icons: downloads every app's Apple TV icon again (apps that have one).
+- The remote's Settings key opens LG's quick settings in apps and on inputs, and ATLauncher's Settings only while
+  ATLauncher is on screen (#15, thanks @n4bcb).
 
 ## 1.0.4
 
