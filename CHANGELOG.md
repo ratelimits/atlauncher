@@ -1,12 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.0.5
 
 - Settings → Top Shelf: Streaming Region and Suggestion Language also step back and forth with ← and →, now that
   the lists are long (OK or a click still goes forward).
 - The focused app glows softly in its own colour, evenly on every side, over a lighter shadow; its lighting is a thin
   rim all the way round (a little brighter on top) instead of a light from the top left with a gloss over the upper
   half, as on tvOS 27.
+- Fix: apps installed or removed shortly after boot appear on (or leave) the Home screen straight away, instead of
+  after up to five minutes: the app list follows SAM again as soon as it restarts (#14, thanks @n4bcb).
 
 ## 1.0.4
 
