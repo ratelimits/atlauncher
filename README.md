@@ -23,8 +23,9 @@ budget webOS 25 set. It can take over the Home button, so it *is* the TV's Home 
 - **App menu**: hold OK on an app for Quit App (while it runs), Edit Home Screen and Delete App.
 - **Settings**: per app, show or hide it, turn its App Store icon on or off, quit or delete it; rearrange apps; Top
   Shelf, Dock and icon options; LG's quick settings; and a way back to LG Home.
-- **Remote**: Home returns to the app you were on (press again for the first app); the Settings and Input keys open
-  ATLauncher's Settings and inputs row; Back works throughout, and the Magic Remote pointer stays hidden for these keys.
+- **Remote**: Home returns to the app you were on (press again for the first app); the Input key opens ATLauncher's
+  inputs row; the Settings key opens ATLauncher's Settings on the Home screen and LG's quick settings in apps and on
+  inputs; Back works throughout, and the Magic Remote pointer stays hidden for these keys.
 
 | | |
 | --- | --- |

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The remote's Settings key opens LG's quick settings in apps and on inputs, and ATLauncher's Settings only while
+  ATLauncher is on screen (#15, thanks @n4bcb).
+
 ## 1.0.5
 
 - Settings → Top Shelf: Streaming Region and Suggestion Language also step back and forth with ← and →, now that
