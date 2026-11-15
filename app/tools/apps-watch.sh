@@ -93,10 +93,24 @@ refetch_watch() {
   done
 }
 
+# SAM restarts during boot leave the listApps subscription dangling until the 300 s timeout below:
+# end it as soon as SAM's PID changes, and wait for SAM to answer before writing.
+sam_pid() { systemctl show -p MainPID --value sam.service 2>/dev/null; }
+apps_ready() { luna-send -n 1 luna://com.webos.applicationManager/listApps '{}' 2>/dev/null | grep -q '"apps"'; }
+sam_guard() {
+  p=$(sam_pid)
+  while sleep 3; do
+    n=$(sam_pid)
+    if [ "$n" != "$p" ]; then p=$n; pkill -f 'luna-send -i luna://com.webos.applicationManager/listApps'; fi
+  done
+}
+
 exec 9>/tmp/atlauncher-apps-watch.lock
 flock -n 9 || exit 0
 refetch_watch &
+sam_guard &
 while :; do
+  until apps_ready; do sleep 2; done
   write
   store
   # One line per change after the initial list; re-write on each, and every 5 minutes (custom art changes too).
